@@ -125,7 +125,7 @@ export default function BookCard({ book }: BookCardProps) {
         
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-primary truncate">{book.title}</h3>
-          <p className="text-sm text-secondary mb-2">{book.author}</p>
+          <p className="text-sm mb-2 text-[#6c5672]">{book.author}</p>
           
           <div className="flex items-center space-x-2 mb-3">
             <div 
