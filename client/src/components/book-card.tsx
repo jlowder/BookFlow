@@ -133,7 +133,7 @@ export default function BookCard({ book }: BookCardProps) {
               style={{ backgroundColor: book.color }}
             ></div>
             <span className="text-xs text-[#534d6c]">
-              {book.totalPages ? `Page ${book.currentPage || 0} of ${book.totalPages}` : 'Progress tracking'}
+              {book.totalPages ? `${book.totalPages} pages` : 'Progress tracking'}
             </span>
           </div>
           
