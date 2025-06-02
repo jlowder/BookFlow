@@ -151,6 +151,12 @@ export class SQLiteStorage implements IStorage {
     return session;
   }
 
+  async deleteReadingSession(id: number): Promise<boolean> {
+    const stmt = this.db.prepare('DELETE FROM reading_sessions WHERE id = ?');
+    const result = stmt.run(id);
+    return result.changes > 0;
+  }
+
   private getReadingSession(id: number): ReadingSession | undefined {
     const stmt = this.db.prepare('SELECT * FROM reading_sessions WHERE id = ?');
     return stmt.get(id) as ReadingSession | undefined;
