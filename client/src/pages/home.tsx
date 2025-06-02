@@ -9,6 +9,7 @@ import ReadingTimeline from "@/components/reading-timeline";
 
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
+  const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
 
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
@@ -21,6 +22,10 @@ export default function Home() {
   const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
     queryKey: ["/api/stats"],
   });
+
+  const handleEditModeToggle = (bookId: number) => {
+    setEditModeBookId(editModeBookId === bookId ? null : bookId);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -90,7 +95,12 @@ export default function Home() {
           ) : currentBooks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentBooks.map((book: Book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard 
+                  key={book.id} 
+                  book={book} 
+                  isEditMode={editModeBookId === book.id}
+                  onEditModeToggle={handleEditModeToggle}
+                />
               ))}
             </div>
           ) : (
@@ -110,7 +120,10 @@ export default function Home() {
         </section>
 
         {/* Reading Timeline */}
-        <ReadingTimeline />
+        <ReadingTimeline 
+          editModeBookId={editModeBookId}
+          onEditModeToggle={handleEditModeToggle}
+        />
 
         {/* Completed Books */}
         <section>

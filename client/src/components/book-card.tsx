@@ -3,16 +3,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, CheckCircle, FileText } from "lucide-react";
+import { Check, CheckCircle, FileText, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Book } from "@shared/schema";
 
 interface BookCardProps {
   book: Book;
+  isEditMode?: boolean;
+  onEditModeToggle?: (bookId: number) => void;
 }
 
-export default function BookCard({ book }: BookCardProps) {
+export default function BookCard({ book, isEditMode = false, onEditModeToggle }: BookCardProps) {
   const [isMarked, setIsMarked] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
@@ -173,6 +175,20 @@ export default function BookCard({ book }: BookCardProps) {
               >
                 <FileText className="w-4 h-4" />
               </Button>
+              {onEditModeToggle && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onEditModeToggle(book.id)}
+                  className={`h-8 w-8 rounded-md p-0 border-gray-300 text-gray-700 ${
+                    isEditMode 
+                      ? 'bg-blue-100 hover:bg-blue-200 border-blue-300' 
+                      : 'bg-[#e5e7eb] hover:bg-gray-300'
+                  }`}
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
