@@ -111,7 +111,7 @@ export default function ReadingTimeline() {
                   className="w-4 h-4 rounded" 
                   style={{ backgroundColor: book.color }}
                 ></div>
-                <span className="text-sm text-secondary truncate max-w-40">{book.title}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-40">{book.title}</span>
               </div>
             ))}
             {completedBooks.slice(0, 2).map(book => (
@@ -120,7 +120,7 @@ export default function ReadingTimeline() {
                   className="w-4 h-4 rounded" 
                   style={{ backgroundColor: book.color }}
                 ></div>
-                <span className="text-sm text-secondary truncate max-w-40">
+                <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-40">
                   Completed: {book.title}
                 </span>
               </div>
@@ -130,7 +130,7 @@ export default function ReadingTimeline() {
           {/* Timeline Visualization */}
           <div className="relative">
             {/* Date Labels */}
-            <div className="flex justify-between text-xs text-secondary mb-4">
+            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
               {getDateLabels().map((label, i) => (
                 <span key={i}>{label}</span>
               ))}
@@ -170,7 +170,7 @@ export default function ReadingTimeline() {
             </div>
 
             {/* Timeline Interaction Hints */}
-            <div className="flex items-center justify-center mt-6 text-xs text-secondary">
+            <div className="flex items-center justify-center mt-6 text-xs text-gray-600 dark:text-gray-400">
               <Info className="w-4 h-4 mr-2" />
               <span>Darker sections indicate reading days • Lighter sections show gaps</span>
             </div>
