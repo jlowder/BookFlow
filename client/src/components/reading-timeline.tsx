@@ -100,6 +100,42 @@ export default function ReadingTimeline() {
     return segments;
   };
 
+  // Generate grid data for GitHub-style view
+  const generateGridData = () => {
+    const gridData = [];
+    const startDate = new Date(timelineData[0]?.date || new Date());
+    
+    // Get the day of week for the first day (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = startDate.getDay();
+    
+    // Add empty cells for days before our start date to align with week structure
+    for (let i = 0; i < firstDayOfWeek; i++) {
+      gridData.push({ date: '', isEmpty: true, sessions: [], colors: [] });
+    }
+    
+    // Add actual timeline data
+    timelineData.forEach(day => {
+      const dayBooks = day.sessions.map(session => 
+        books.find(book => book.id === session.bookId)
+      ).filter(Boolean) as Book[];
+      
+      const colors = dayBooks.map(book => book.color);
+      
+      gridData.push({
+        date: day.date,
+        isEmpty: false,
+        sessions: day.sessions,
+        colors: colors.length > 0 ? colors : [],
+        hasReading: day.hasReading
+      });
+    });
+    
+    return gridData;
+  };
+
+  const gridData = generateGridData();
+  const shouldUseGridView = parseInt(timeRange) > 30 || timeRange === "thisyear";
+
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -137,51 +173,102 @@ export default function ReadingTimeline() {
 
           {/* Timeline Visualization */}
           <div className="relative">
-            {/* Date Labels */}
-            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
-              {getDateLabels().map((label, i) => (
-                <span key={i}>{label}</span>
-              ))}
-            </div>
-
-            {/* Timeline Ribbons */}
-            <div className="space-y-3">
-              {books.slice(0, 5).map(book => {
-                const segments = generateRibbonSegments(book);
-                const isCompleted = book.status === "completed";
+            {shouldUseGridView ? (
+              /* GitHub-style Grid View */
+              <div className="space-y-4">
+                {/* Month Labels for Grid */}
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  {getDateLabels().map((label, i) => (
+                    <span key={i}>{label}</span>
+                  ))}
+                </div>
                 
-                return (
-                  <div key={book.id} className="relative h-8 bg-gray-100 rounded-lg overflow-hidden">
-                    <div className="absolute inset-0 flex">
-                      {segments.map((segment, i) => (
-                        <div 
-                          key={i}
-                          className="h-full"
-                          style={{ 
-                            width: segment.width,
-                            backgroundColor: segment.color,
-                            opacity: segment.opacity
-                          }}
-                        ></div>
-                      ))}
-                      {isCompleted && (
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                            <Check className="w-3 h-3" style={{ color: book.color }} />
-                          </div>
-                        </div>
-                      )}
+                {/* Day of Week Labels */}
+                <div className="flex mb-2">
+                  <div className="w-8 text-xs text-gray-500"></div>
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={i} className="w-3 h-3 text-xs text-gray-500 text-center mr-1 flex items-center justify-center">
+                      {day}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+                
+                {/* Grid */}
+                <div className="grid grid-cols-7 gap-1 w-fit">
+                  {gridData.map((day, i) => (
+                    <div
+                      key={i}
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{
+                        background: day.isEmpty 
+                          ? 'transparent'
+                          : day.colors.length === 0
+                            ? '#f3f4f6'
+                            : day.colors.length === 1
+                              ? day.colors[0]
+                              : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
+                      }}
+                      title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
+                    ></div>
+                  ))}
+                </div>
+                
+                {/* Grid Interaction Hints */}
+                <div className="flex items-center justify-center mt-4 text-xs text-gray-600 dark:text-gray-400">
+                  <Info className="w-4 h-4 mr-2" />
+                  <span>Each square represents a day • Multiple colors show different books read</span>
+                </div>
+              </div>
+            ) : (
+              /* Original Ribbon View */
+              <div>
+                {/* Date Labels */}
+                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
+                  {getDateLabels().map((label, i) => (
+                    <span key={i}>{label}</span>
+                  ))}
+                </div>
 
-            {/* Timeline Interaction Hints */}
-            <div className="flex items-center justify-center mt-6 text-xs text-gray-600 dark:text-gray-400">
-              <Info className="w-4 h-4 mr-2" />
-              <span>Darker sections indicate reading days • Lighter sections show gaps</span>
-            </div>
+                {/* Timeline Ribbons */}
+                <div className="space-y-3">
+                  {books.slice(0, 5).map(book => {
+                    const segments = generateRibbonSegments(book);
+                    const isCompleted = book.status === "completed";
+                    
+                    return (
+                      <div key={book.id} className="relative h-8 bg-gray-100 rounded-lg overflow-hidden">
+                        <div className="absolute inset-0 flex">
+                          {segments.map((segment, i) => (
+                            <div 
+                              key={i}
+                              className="h-full"
+                              style={{ 
+                                width: segment.width,
+                                backgroundColor: segment.color,
+                                opacity: segment.opacity
+                              }}
+                            ></div>
+                          ))}
+                          {isCompleted && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                                <Check className="w-3 h-3" style={{ color: book.color }} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Timeline Interaction Hints */}
+                <div className="flex items-center justify-center mt-6 text-xs text-gray-600 dark:text-gray-400">
+                  <Info className="w-4 h-4 mr-2" />
+                  <span>Darker sections indicate reading days • Lighter sections show gaps</span>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
