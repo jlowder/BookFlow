@@ -36,14 +36,18 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="hidden sm:flex items-center space-x-6 text-sm text-secondary">
-                <span className="flex items-center space-x-1">
-                  <Flame className="w-4 h-4 accent-orange" />
-                  <span>{stats.streak} day streak</span>
+              <div className="hidden sm:flex items-center space-x-6 text-sm">
+                <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <span className="font-medium">{stats.streak} day streak</span>
                 </span>
-                <span className="flex items-center space-x-1">
-                  <Library className="w-4 h-4 accent-green" />
-                  <span>{stats.totalBooks} books</span>
+                <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+                  <BookOpen className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium">{currentBooks.length} reading</span>
+                </span>
+                <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+                  <Library className="w-4 h-4 text-green-500" />
+                  <span className="font-medium">{stats.totalBooks} completed</span>
                 </span>
               </div>
               

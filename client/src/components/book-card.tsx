@@ -139,7 +139,7 @@ export default function BookCard({ book }: BookCardProps) {
               variant="outline"
               onClick={() => markCompleteMutation.mutate()}
               disabled={markCompleteMutation.isPending}
-              className="w-full text-xs bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-9 rounded-md px-3 w-full bg-green-50 hover:bg-green-100 border-green-200 text-green-700 ml-[0px] mr-[0px] font-normal pl-[4px] pr-[4px] mt-[5px] mb-[5px] text-[12px]"
             >
               <CheckCircle className="w-3 h-3 mr-1" />
               {markCompleteMutation.isPending ? 'Marking Complete...' : 'Mark as Complete'}
