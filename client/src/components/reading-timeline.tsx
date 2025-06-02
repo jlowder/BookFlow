@@ -242,26 +242,29 @@ export default function ReadingTimeline() {
                     ))}
                   </div>
                   
-                  {/* Grid */}
-                  <div className="flex flex-col">
-                    {gridData.weeks?.map((week: any, weekIndex: number) => (
-                      <div key={weekIndex} className="flex mb-1">
-                        {week.map((day: any, dayIndex: number) => (
-                          <div
-                            key={dayIndex}
-                            className="w-3 h-3 rounded-sm mr-1 border border-gray-200"
-                            style={{
-                              background: day.isEmpty 
-                                ? 'transparent'
-                                : day.colors.length === 0
-                                  ? '#f3f4f6'
-                                  : day.colors.length === 1
-                                    ? day.colors[0]
-                                    : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
-                            }}
-                            title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
-                          ></div>
-                        ))}
+                  {/* Grid - Rotated to flow horizontally */}
+                  <div className="flex">
+                    {Array.from({ length: gridData.weeks?.[0]?.length || 7 }, (_, dayOfWeek) => (
+                      <div key={dayOfWeek} className="flex flex-col mr-1">
+                        {gridData.weeks?.map((week: any, weekIndex: number) => {
+                          const day = week[dayOfWeek];
+                          return (
+                            <div
+                              key={weekIndex}
+                              className="w-3 h-3 rounded-sm mb-1 border border-gray-200"
+                              style={{
+                                background: day.isEmpty 
+                                  ? 'transparent'
+                                  : day.colors.length === 0
+                                    ? '#f3f4f6'
+                                    : day.colors.length === 1
+                                      ? day.colors[0]
+                                      : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
+                              }}
+                              title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
+                            ></div>
+                          );
+                        })}
                       </div>
                     ))}
                   </div>
