@@ -243,7 +243,6 @@ export default function ReadingTimeline() {
                 <div className="flex">
                   {/* Day of Week Labels */}
                   <div className="flex flex-col">
-                    <div className="h-4 mb-1"></div>
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
                       <div key={i} className="w-8 h-3 mb-1 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
                         {day}
