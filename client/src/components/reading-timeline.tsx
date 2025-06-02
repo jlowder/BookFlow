@@ -127,8 +127,8 @@ export default function ReadingTimeline() {
     while (currentDate <= endDate) {
       const week = [];
       
-      // Track month changes for labels
-      if (currentDate.getMonth() !== currentMonth) {
+      // Track month changes for labels - but only for dates within our actual range
+      if (currentDate >= startDate && currentDate.getMonth() !== currentMonth) {
         currentMonth = currentDate.getMonth();
         monthLabels.push({
           month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
