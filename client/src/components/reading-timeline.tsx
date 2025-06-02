@@ -142,8 +142,10 @@ export default function ReadingTimeline() {
         const dayData = dayMap.get(dateStr);
         
         if (dayData) {
-          const dayBooks = dayData.sessions.map((session: any) => 
-            books.find(book => book.id === session.bookId)
+          // Get unique books for this day (avoid duplicates from multiple sessions)
+          const uniqueBookIds = [...new Set(dayData.sessions.map((session: any) => session.bookId))];
+          const dayBooks = uniqueBookIds.map((bookId: number) => 
+            books.find(book => book.id === bookId)
           ).filter(Boolean) as Book[];
           
           const colors = dayBooks.map(book => book.color);
