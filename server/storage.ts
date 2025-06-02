@@ -59,7 +59,8 @@ export class MemStorage implements IStorage {
       currentPage: insertBook.currentPage || null,
       status: insertBook.status || "reading",
       startDate: now,
-      completedDate: null
+      completedDate: null,
+      notes: insertBook.notes || null
     };
     this.books.set(id, book);
     return book;

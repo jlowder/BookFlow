@@ -13,6 +13,7 @@ export const books = pgTable("books", {
   color: text("color").notNull(), // Hex color for timeline visualization
   startDate: date("start_date"),
   completedDate: date("completed_date"),
+  notes: text("notes"),
 });
 
 export const readingSessions = pgTable("reading_sessions", {

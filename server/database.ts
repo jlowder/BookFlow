@@ -25,7 +25,8 @@ export class SQLiteStorage implements IStorage {
         status TEXT CHECK(status IN ('reading', 'completed', 'paused')) DEFAULT 'reading',
         color TEXT NOT NULL,
         startDate TEXT,
-        completedDate TEXT
+        completedDate TEXT,
+        notes TEXT
       )
     `);
 
@@ -61,8 +62,8 @@ export class SQLiteStorage implements IStorage {
   async createBook(insertBook: InsertBook): Promise<Book> {
     const now = new Date().toISOString().split('T')[0];
     const stmt = this.db.prepare(`
-      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
@@ -73,7 +74,8 @@ export class SQLiteStorage implements IStorage {
       insertBook.totalPages || null,
       insertBook.currentPage || null,
       insertBook.status || 'reading',
-      now
+      now,
+      insertBook.notes || null
     );
 
     const book = await this.getBook(result.lastInsertRowid as number);

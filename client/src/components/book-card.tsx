@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, CheckCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Book } from "@shared/schema";
@@ -12,6 +14,8 @@ interface BookCardProps {
 
 export default function BookCard({ book }: BookCardProps) {
   const [isMarked, setIsMarked] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -71,6 +75,36 @@ export default function BookCard({ book }: BookCardProps) {
       });
     },
   });
+
+  const updateNotesMutation = useMutation({
+    mutationFn: async (newNotes: string) => {
+      await apiRequest("PATCH", `/api/books/${book.id}`, {
+        notes: newNotes
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Notes updated!",
+        description: "Your notes have been saved",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/completed"] });
+      setIsNotesOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save notes",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveNotes = () => {
+    updateNotesMutation.mutate(notes);
+  };
 
   const progressPercentage = book.totalPages ? (book.currentPage || 0) / book.totalPages * 100 : 0;
 
