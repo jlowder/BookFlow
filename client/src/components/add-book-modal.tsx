@@ -163,10 +163,10 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                         className="w-12 h-16 object-cover rounded" 
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">
+                        <h4 className="font-semibold text-gray-900 text-sm leading-tight">
                           {book.volumeInfo.title}
                         </h4>
-                        <p className="text-sm text-gray-700 truncate font-medium">
+                        <p className="text-sm text-gray-700 font-medium">
                           {book.volumeInfo.authors?.[0] || "Unknown Author"}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
