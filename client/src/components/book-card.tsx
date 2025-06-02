@@ -132,7 +132,7 @@ export default function BookCard({ book }: BookCardProps) {
               className="w-3 h-3 rounded-full" 
               style={{ backgroundColor: book.color }}
             ></div>
-            <span className="text-xs text-secondary">
+            <span className="text-xs text-[#534d6c]">
               {book.totalPages ? `Page ${book.currentPage || 0} of ${book.totalPages}` : 'Progress tracking'}
             </span>
           </div>
@@ -186,7 +186,6 @@ export default function BookCard({ book }: BookCardProps) {
           </div>
         </div>
       </div>
-      
       {/* Notes Dialog */}
       <Dialog open={isNotesOpen} onOpenChange={setIsNotesOpen}>
         <DialogContent className="max-w-md">
