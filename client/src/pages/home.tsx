@@ -10,15 +10,15 @@ import ReadingTimeline from "@/components/reading-timeline";
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
 
-  const { data: currentBooks = [], isLoading: booksLoading } = useQuery({
+  const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
   });
 
-  const { data: completedBooks = [] } = useQuery({
+  const { data: completedBooks = [] } = useQuery<Book[]>({
     queryKey: ["/api/books/status/completed"],
   });
 
-  const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery({
+  const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
     queryKey: ["/api/stats"],
   });
 

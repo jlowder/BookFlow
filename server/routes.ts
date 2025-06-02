@@ -13,9 +13,15 @@ const colors = [
   "#06B6D4", // cyan
   "#EF4444", // red
   "#84CC16", // lime
+  "#F97316", // orange
+  "#8B5A3C", // brown
+  "#6366F1", // indigo
+  "#D946EF", // fuchsia
 ];
 
-let colorIndex = 0;
+function getRandomColor() {
+  return colors[Math.floor(Math.random() * colors.length)];
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -48,9 +54,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookData = insertBookSchema.parse({
         ...req.body,
-        color: colors[colorIndex % colors.length]
+        color: getRandomColor()
       });
-      colorIndex++;
       
       const book = await storage.createBook(bookData);
       res.status(201).json(book);
