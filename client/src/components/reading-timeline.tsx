@@ -148,6 +148,17 @@ export default function ReadingTimeline() {
           
           const colors = dayBooks.map(book => book.color);
           
+          // Debug logging for today's date
+          if (dateStr === '2025-06-02') {
+            console.log('Debug for today:', {
+              dateStr,
+              sessions: dayData.sessions,
+              dayBooks,
+              colors,
+              allBooks: books
+            });
+          }
+          
           week.push({
             date: dateStr,
             isEmpty: false,
