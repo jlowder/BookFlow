@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 210 14% 25%; /* #2D3748 */
+  --muted: 210 4% 96%;
+  --muted-foreground: 210 5% 45%; /* #4A5568 */
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 14% 25%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 14% 25%;
+  --border: 210 6% 90%;
+  --input: 210 6% 90%;
+  --primary: 207 90% 54%; /* #3182CE */
+  --primary-foreground: 211 100% 99%;
+  --secondary: 210 4% 96%;
+  --secondary-foreground: 210 10% 10%;
+  --accent: 210 4% 96%;
+  --accent-foreground: 210 10% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 60 9% 98%;
+  --ring: 210 14% 25%;
+  --radius: 0.5rem;
+  
+  /* Custom accent colors matching design */
+  --accent-blue: 207 90% 54%; /* #3182CE */
+  --accent-green: 142 71% 45%; /* #38A169 */
+  --accent-orange: 31 91% 57%; /* #ED8936 */
+  --accent-purple: 252 69% 73%; /* #9F7AEA */
+  --accent-pink: 328 85% 57%; /* #D53F8C */
+  --accent-teal: 180 77% 40%; /* #319795 */
+}
+
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 98%;
+  --muted: 240 4% 16%;
+  --muted-foreground: 240 5% 65%;
+  --popover: 240 10% 4%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 4%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 4% 16%;
+  --input: 240 4% 16%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 240 4% 16%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 4% 16%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 5% 84%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .accent-blue {
+    color: hsl(var(--accent-blue));
+  }
+  
+  .bg-accent-blue {
+    background-color: hsl(var(--accent-blue));
+  }
+  
+  .accent-green {
+    color: hsl(var(--accent-green));
+  }
+  
+  .bg-accent-green {
+    background-color: hsl(var(--accent-green));
+  }
+  
+  .accent-orange {
+    color: hsl(var(--accent-orange));
+  }
+  
+  .bg-accent-orange {
+    background-color: hsl(var(--accent-orange));
+  }
+  
+  .accent-purple {
+    color: hsl(var(--accent-purple));
+  }
+  
+  .bg-accent-purple {
+    background-color: hsl(var(--accent-purple));
+  }
+  
+  .accent-pink {
+    color: hsl(var(--accent-pink));
+  }
+  
+  .bg-accent-pink {
+    background-color: hsl(var(--accent-pink));
+  }
+  
+  .accent-teal {
+    color: hsl(var(--accent-teal));
+  }
+  
+  .bg-accent-teal {
+    background-color: hsl(var(--accent-teal));
+  }
+}
