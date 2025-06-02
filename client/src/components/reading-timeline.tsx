@@ -142,6 +142,17 @@ export default function ReadingTimeline() {
         const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayData = dayMap.get(dateStr);
         
+        // Debug logging for June 2nd
+        if (dateStr === '2025-06-02') {
+          console.log('June 2nd debug:', {
+            dateStr,
+            actualDayOfWeek,
+            dayOfWeekLoop: dayOfWeek,
+            currentDate: currentDate.toString(),
+            dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][actualDayOfWeek]
+          });
+        }
+        
         if (dayData) {
           // Get unique books for this day (avoid duplicates from multiple sessions)
           const bookIds = dayData.sessions.map((session: any) => session.bookId) as number[];
