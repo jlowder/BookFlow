@@ -105,23 +105,14 @@ export default function ReadingTimeline() {
         <CardContent className="p-6">
           {/* Book Legend */}
           <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            {currentBooks.map(book => (
-              <div key={book.id} className="flex items-center space-x-2">
-                <div 
-                  className="w-4 h-4 rounded" 
-                  style={{ backgroundColor: book.color }}
-                ></div>
-                <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-40">{book.title}</span>
-              </div>
-            ))}
-            {completedBooks.slice(0, 2).map(book => (
+            {books.slice(0, 5).map(book => (
               <div key={book.id} className="flex items-center space-x-2">
                 <div 
                   className="w-4 h-4 rounded" 
                   style={{ backgroundColor: book.color }}
                 ></div>
                 <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-40">
-                  Completed: {book.title}
+                  {book.status === "completed" ? "✓ " : ""}{book.title}
                 </span>
               </div>
             ))}
@@ -138,7 +129,7 @@ export default function ReadingTimeline() {
 
             {/* Timeline Ribbons */}
             <div className="space-y-3">
-              {currentBooks.concat(completedBooks.slice(0, 2)).map(book => {
+              {books.slice(0, 5).map(book => {
                 const segments = generateRibbonSegments(book);
                 const isCompleted = book.status === "completed";
                 
