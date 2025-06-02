@@ -102,35 +102,79 @@ export default function ReadingTimeline() {
 
   // Generate grid data for GitHub-style view
   const generateGridData = () => {
-    const gridData = [];
-    const startDate = new Date(timelineData[0]?.date || new Date());
+    if (timelineData.length === 0) return { weeks: [], monthLabels: [] };
     
-    // Get the day of week for the first day (0 = Sunday, 1 = Monday, etc.)
-    const firstDayOfWeek = startDate.getDay();
+    const weeks = [];
+    const monthLabels = [];
+    const startDate = new Date(timelineData[0].date);
+    const endDate = new Date(timelineData[timelineData.length - 1].date);
     
-    // Add empty cells for days before our start date to align with week structure
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      gridData.push({ date: '', isEmpty: true, sessions: [], colors: [] });
-    }
-    
-    // Add actual timeline data
+    // Create a map for quick lookup of timeline data
+    const dayMap = new Map();
     timelineData.forEach(day => {
-      const dayBooks = day.sessions.map(session => 
-        books.find(book => book.id === session.bookId)
-      ).filter(Boolean) as Book[];
-      
-      const colors = dayBooks.map(book => book.color);
-      
-      gridData.push({
-        date: day.date,
-        isEmpty: false,
-        sessions: day.sessions,
-        colors: colors.length > 0 ? colors : [],
-        hasReading: day.hasReading
-      });
+      dayMap.set(day.date, day);
     });
     
-    return gridData;
+    // Find the Sunday before our start date
+    const gridStartDate = new Date(startDate);
+    gridStartDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    // Generate weeks
+    let currentDate = new Date(gridStartDate);
+    let currentMonth = currentDate.getMonth();
+    let weekIndex = 0;
+    
+    while (currentDate <= endDate) {
+      const week = [];
+      
+      // Track month changes for labels
+      if (currentDate.getMonth() !== currentMonth || weekIndex === 0) {
+        currentMonth = currentDate.getMonth();
+        monthLabels.push({
+          month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+          weekIndex: weekIndex
+        });
+      }
+      
+      // Generate 7 days for this week
+      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const dayData = dayMap.get(dateStr);
+        
+        if (dayData) {
+          const dayBooks = dayData.sessions.map((session: any) => 
+            books.find(book => book.id === session.bookId)
+          ).filter(Boolean) as Book[];
+          
+          const colors = dayBooks.map(book => book.color);
+          
+          week.push({
+            date: dateStr,
+            isEmpty: false,
+            sessions: dayData.sessions,
+            colors: colors.length > 0 ? colors : [],
+            hasReading: dayData.hasReading
+          });
+        } else {
+          // Day outside our range or no data
+          const isInRange = currentDate >= startDate && currentDate <= endDate;
+          week.push({
+            date: isInRange ? dateStr : '',
+            isEmpty: !isInRange,
+            sessions: [],
+            colors: [],
+            hasReading: false
+          });
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      weeks.push(week);
+      weekIndex++;
+    }
+    
+    return { weeks, monthLabels };
   };
 
   const gridData = generateGridData();
@@ -176,41 +220,51 @@ export default function ReadingTimeline() {
             {shouldUseGridView ? (
               /* GitHub-style Grid View */
               <div className="space-y-4">
-                {/* Month Labels for Grid */}
-                <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  {getDateLabels().map((label, i) => (
-                    <span key={i}>{label}</span>
-                  ))}
-                </div>
-                
-                {/* Day of Week Labels */}
-                <div className="flex mb-2">
-                  <div className="w-8 text-xs text-gray-500"></div>
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                    <div key={i} className="w-3 h-3 text-xs text-gray-500 text-center mr-1 flex items-center justify-center">
-                      {day}
+                {/* Month Labels */}
+                <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  <div className="w-8"></div>
+                  {gridData.monthLabels?.map((label, i) => (
+                    <div key={i} className="text-xs text-gray-600 dark:text-gray-400" style={{ marginLeft: `${label.weekIndex * 16}px` }}>
+                      {label.month}
                     </div>
                   ))}
                 </div>
                 
-                {/* Grid */}
-                <div className="grid grid-cols-7 gap-1 w-fit">
-                  {gridData.map((day, i) => (
-                    <div
-                      key={i}
-                      className="w-3 h-3 rounded-sm border border-gray-200"
-                      style={{
-                        background: day.isEmpty 
-                          ? 'transparent'
-                          : day.colors.length === 0
-                            ? '#f3f4f6'
-                            : day.colors.length === 1
-                              ? day.colors[0]
-                              : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
-                      }}
-                      title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
-                    ></div>
-                  ))}
+                {/* Grid with Day Labels */}
+                <div className="flex">
+                  {/* Day of Week Labels */}
+                  <div className="flex flex-col mr-2">
+                    <div className="h-3 mb-1"></div>
+                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                      <div key={i} className="w-6 h-3 text-xs text-gray-500 text-right pr-1 mb-1 flex items-center justify-end">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Grid */}
+                  <div className="flex flex-col">
+                    {gridData.weeks?.map((week: any, weekIndex: number) => (
+                      <div key={weekIndex} className="flex mb-1">
+                        {week.map((day: any, dayIndex: number) => (
+                          <div
+                            key={dayIndex}
+                            className="w-3 h-3 rounded-sm mr-1 border border-gray-200"
+                            style={{
+                              background: day.isEmpty 
+                                ? 'transparent'
+                                : day.colors.length === 0
+                                  ? '#f3f4f6'
+                                  : day.colors.length === 1
+                                    ? day.colors[0]
+                                    : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
+                            }}
+                            title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
+                          ></div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 {/* Grid Interaction Hints */}
