@@ -164,7 +164,15 @@ export default function BookCard({ book }: BookCardProps) {
               </div>
             </div>
             
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsNotesOpen(true)}
+                className="h-8 w-8 rounded-md p-0 bg-[#e5e7eb] hover:bg-gray-300 border-gray-300 text-gray-700"
+              >
+                <FileText className="w-4 h-4" />
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -178,6 +186,40 @@ export default function BookCard({ book }: BookCardProps) {
           </div>
         </div>
       </div>
+      
+      {/* Notes Dialog */}
+      <Dialog open={isNotesOpen} onOpenChange={setIsNotesOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Notes for "{book.title}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Add your thoughts, quotes, or notes about this book..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={6}
+              className="resize-none"
+            />
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsNotesOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveNotes}
+                disabled={updateNotesMutation.isPending}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {updateNotesMutation.isPending ? 'Saving...' : 'Save Notes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
