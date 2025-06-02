@@ -49,8 +49,14 @@ export class MemStorage implements IStorage {
     const id = this.currentBookId++;
     const now = new Date().toISOString().split('T')[0];
     const book: Book = { 
-      ...insertBook, 
       id,
+      title: insertBook.title,
+      author: insertBook.author,
+      color: insertBook.color,
+      coverUrl: insertBook.coverUrl || null,
+      totalPages: insertBook.totalPages || null,
+      currentPage: insertBook.currentPage || null,
+      status: insertBook.status || "reading",
       startDate: now,
       completedDate: null
     };
@@ -91,14 +97,21 @@ export class MemStorage implements IStorage {
 
   async createReadingSession(insertSession: InsertReadingSession): Promise<ReadingSession> {
     const id = this.currentSessionId++;
-    const session: ReadingSession = { ...insertSession, id };
+    const session: ReadingSession = { 
+      id,
+      bookId: insertSession.bookId,
+      date: insertSession.date,
+      pagesRead: insertSession.pagesRead || null,
+      duration: insertSession.duration || null,
+      notes: insertSession.notes || null
+    };
     this.readingSessions.set(id, session);
     return session;
   }
 
   async getReadingStreak(): Promise<number> {
     const sessions = Array.from(this.readingSessions.values());
-    const uniqueDates = [...new Set(sessions.map(s => s.date))].sort().reverse();
+    const uniqueDates = Array.from(new Set(sessions.map(s => s.date))).sort().reverse();
     
     let streak = 0;
     const today = new Date().toISOString().split('T')[0];

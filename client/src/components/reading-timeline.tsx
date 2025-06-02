@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Info } from "lucide-react";
+import { Info, Check } from "lucide-react";
 import { useState } from "react";
 import type { Book, ReadingSession } from "@shared/schema";
 
@@ -12,18 +12,15 @@ export default function ReadingTimeline() {
     queryKey: ["/api/books"],
   });
 
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - parseInt(timeRange));
+  
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions"],
-    select: (data) => {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(timeRange));
-      
-      return data.filter(session => {
-        const sessionDate = new Date(session.date);
-        return sessionDate >= startDate && sessionDate <= endDate;
-      });
-    },
+    queryKey: ["/api/reading-sessions", timeRange],
+    queryFn: () => 
+      fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
+        .then(res => res.json()),
   });
 
   const currentBooks = books.filter(book => book.status === "reading");
@@ -44,7 +41,7 @@ export default function ReadingTimeline() {
       timeline.push({
         date: dateStr,
         sessions: daySessions,
-        hasReading: dayServices.length > 0
+        hasReading: daySessions.length > 0
       });
     }
 
