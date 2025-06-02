@@ -121,14 +121,14 @@ export default function ReadingTimeline() {
     
     // Generate weeks
     let currentDate = new Date(gridStartDate);
-    let currentMonth = currentDate.getMonth();
+    let currentMonth = -1; // Initialize to -1 to ensure first month is captured
     let weekIndex = 0;
     
     while (currentDate <= endDate) {
       const week = [];
       
       // Track month changes for labels
-      if (currentDate.getMonth() !== currentMonth || weekIndex === 0) {
+      if (currentDate.getMonth() !== currentMonth) {
         currentMonth = currentDate.getMonth();
         monthLabels.push({
           month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
