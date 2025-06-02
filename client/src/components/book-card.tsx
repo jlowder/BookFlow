@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Book } from "@shared/schema";
@@ -46,6 +46,32 @@ export default function BookCard({ book }: BookCardProps) {
     },
   });
 
+  const markCompleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/books/${book.id}`, {
+        status: "completed"
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Book completed!",
+        description: `"${book.title}" moved to completed books`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/completed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to mark book as completed",
+        variant: "destructive",
+      });
+    },
+  });
+
   const progressPercentage = book.totalPages ? (book.currentPage || 0) / book.totalPages * 100 : 0;
 
   // Generate recent reading pattern (mock for now)
@@ -77,34 +103,47 @@ export default function BookCard({ book }: BookCardProps) {
             </span>
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => markReadMutation.mutate()}
+                disabled={markReadMutation.isPending || isMarked}
+                className={`text-xs transition-colors duration-200 ${
+                  isMarked 
+                    ? 'bg-accent-green text-white border-accent-green' 
+                    : 'hover:bg-gray-200'
+                }`}
+              >
+                <Check className="w-3 h-3 mr-1" />
+                {isMarked ? 'Recorded!' : 'Read Today'}
+              </Button>
+              
+              <div className="flex space-x-1">
+                {recentPattern.map((day, i) => (
+                  <div 
+                    key={i}
+                    className="w-2 h-2 rounded-full"
+                    style={{ 
+                      backgroundColor: book.color,
+                      opacity: day.read ? day.opacity : 0.3
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+            
             <Button
               size="sm"
               variant="outline"
-              onClick={() => markReadMutation.mutate()}
-              disabled={markReadMutation.isPending || isMarked}
-              className={`text-xs transition-colors duration-200 ${
-                isMarked 
-                  ? 'bg-accent-green text-white border-accent-green' 
-                  : 'hover:bg-gray-200'
-              }`}
+              onClick={() => markCompleteMutation.mutate()}
+              disabled={markCompleteMutation.isPending}
+              className="w-full text-xs bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
             >
-              <Check className="w-3 h-3 mr-1" />
-              {isMarked ? 'Recorded!' : 'Read Today'}
+              <CheckCircle className="w-3 h-3 mr-1" />
+              {markCompleteMutation.isPending ? 'Marking Complete...' : 'Mark as Complete'}
             </Button>
-            
-            <div className="flex space-x-1">
-              {recentPattern.map((day, i) => (
-                <div 
-                  key={i}
-                  className="w-2 h-2 rounded-full"
-                  style={{ 
-                    backgroundColor: book.color,
-                    opacity: day.read ? day.opacity : 0.3
-                  }}
-                ></div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
