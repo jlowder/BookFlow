@@ -8,46 +8,24 @@ import type { Book, ReadingSession } from "@shared/schema";
 export default function ReadingTimeline() {
   const [timeRange, setTimeRange] = useState("30");
 
-  // Generate month options for the last 12 months
-  const getMonthOptions = () => {
-    const months = [];
-    const today = new Date();
-    
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-      
-      months.push({
-        value: `month-${i}`,
-        label: monthName,
-        days: daysInMonth,
-        startDate: date
-      });
-    }
-    
-    return months;
-  };
-
-  const monthOptions = getMonthOptions();
-
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
   });
 
   const getDateRange = () => {
-    if (timeRange.startsWith('month-')) {
-      const monthIndex = parseInt(timeRange.replace('month-', ''));
-      const monthOption = monthOptions[monthIndex];
-      const startDate = new Date(monthOption.startDate);
-      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
-      return { startDate, endDate };
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    if (timeRange === "thisyear") {
+      // This year - from January 1st to today
+      startDate.setFullYear(endDate.getFullYear(), 0, 1);
     } else {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - parseInt(timeRange));
-      return { startDate, endDate };
+      // All other options go back by number of days
+      const days = parseInt(timeRange);
+      startDate.setDate(endDate.getDate() - days);
     }
+    
+    return { startDate, endDate };
   };
 
   const { startDate, endDate } = getDateRange();
@@ -132,14 +110,10 @@ export default function ReadingTimeline() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">Last 3 months</SelectItem>
-            <SelectItem value="180">Last 6 months</SelectItem>
-            <SelectItem value="365">This year</SelectItem>
-            {monthOptions.map((month) => (
-              <SelectItem key={month.value} value={month.value}>
-                {month.label}
-              </SelectItem>
-            ))}
+            <SelectItem value="90">3 months</SelectItem>
+            <SelectItem value="180">6 months</SelectItem>
+            <SelectItem value="365">12 months</SelectItem>
+            <SelectItem value="thisyear">This year</SelectItem>
           </SelectContent>
         </Select>
       </div>
