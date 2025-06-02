@@ -138,20 +138,14 @@ export default function ReadingTimeline() {
       
       // Generate 7 days for this week, placing each day in the correct position
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        // Use local date string to avoid timezone issues
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
         const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayData = dayMap.get(dateStr);
-        
-        // Debug logging for June 2nd
-        if (dateStr === '2025-06-02') {
-          console.log('June 2nd debug:', {
-            dateStr,
-            actualDayOfWeek,
-            dayOfWeekLoop: dayOfWeek,
-            currentDate: currentDate.toString(),
-            dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][actualDayOfWeek]
-          });
-        }
         
         if (dayData) {
           // Get unique books for this day (avoid duplicates from multiple sessions)
