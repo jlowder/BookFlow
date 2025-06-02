@@ -1,16 +1,75 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Info, Check } from "lucide-react";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { Book, ReadingSession } from "@shared/schema";
 
-export default function ReadingTimeline() {
+interface ReadingTimelineProps {
+  editModeBookId?: number | null;
+  onEditModeToggle?: (bookId: number) => void;
+}
+
+export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: ReadingTimelineProps) {
   const [timeRange, setTimeRange] = useState("30");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
   });
+
+  // Mutation for toggling reading sessions
+  const toggleSessionMutation = useMutation({
+    mutationFn: async ({ bookId, date, hasSession }: { bookId: number; date: string; hasSession: boolean }) => {
+      if (hasSession) {
+        // Find and delete the session for this book on this date
+        const sessions = await fetch(`/api/reading-sessions?date=${date}`).then(r => r.json());
+        const sessionToDelete = sessions.find((s: any) => s.bookId === bookId);
+        if (sessionToDelete) {
+          await apiRequest("DELETE", `/api/reading-sessions/${sessionToDelete.id}`);
+        }
+      } else {
+        // Create a new session
+        await apiRequest("POST", "/api/reading-sessions", {
+          bookId,
+          date,
+          pagesRead: 1,
+          duration: 30,
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      toast({
+        title: "Reading session updated",
+        description: "Your reading progress has been updated",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update reading session",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handler for grid cell clicks in edit mode
+  const handleGridCellClick = (day: any) => {
+    if (!editModeBookId || day.isEmpty || !day.date) return;
+    
+    // Check if this book already has a session on this date
+    const hasSession = day.sessions.some((session: any) => session.bookId === editModeBookId);
+    
+    toggleSessionMutation.mutate({
+      bookId: editModeBookId,
+      date: day.date,
+      hasSession
+    });
+  };
 
   const getDateRange = () => {
     const endDate = new Date();
@@ -279,7 +338,9 @@ export default function ReadingTimeline() {
                         {week.map((day: any, dayIndex: number) => (
                           <div
                             key={dayIndex}
-                            className="w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200"
+                            className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${
+                              editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''
+                            }`}
                             style={{
                               background: day.isEmpty 
                                 ? 'transparent'
@@ -291,9 +352,10 @@ export default function ReadingTimeline() {
                                       ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
                                       : day.colors.length === 3
                                         ? `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
-                                        : `linear-gradient(90deg, ${day.colors.slice(0, 4).map((color, i) => `${color} ${i * 25}% ${(i + 1) * 25}%`).join(', ')})`
+                                        : `linear-gradient(90deg, ${day.colors.slice(0, 4).map((color: string, i: number) => `${color} ${i * 25}% ${(i + 1) * 25}%`).join(', ')})`
                             }}
                             title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
+                            onClick={() => handleGridCellClick(day)}
                           ></div>
                         ))}
                       </div>

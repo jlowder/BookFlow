@@ -114,6 +114,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a reading session
+  app.delete("/api/reading-sessions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteReadingSession(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Reading session not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete reading session" });
+    }
+  });
+
   // Get reading sessions for a book
   app.get("/api/books/:id/sessions", async (req, res) => {
     try {
