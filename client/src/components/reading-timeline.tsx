@@ -148,16 +148,7 @@ export default function ReadingTimeline() {
           
           const colors = dayBooks.map(book => book.color);
           
-          // Debug logging for today's date
-          if (dateStr === '2025-06-02') {
-            console.log('Debug for today:', {
-              dateStr,
-              sessions: dayData.sessions,
-              dayBooks,
-              colors,
-              allBooks: books
-            });
-          }
+
           
           week.push({
             date: dateStr,
@@ -276,7 +267,11 @@ export default function ReadingTimeline() {
                                   ? '#f3f4f6'
                                   : day.colors.length === 1
                                     ? day.colors[0]
-                                    : `linear-gradient(45deg, ${day.colors.slice(0, 4).join(', ')})`
+                                    : day.colors.length === 2
+                                      ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
+                                      : day.colors.length === 3
+                                        ? `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
+                                        : `linear-gradient(90deg, ${day.colors.slice(0, 4).map((color, i) => `${color} ${i * 25}% ${(i + 1) * 25}%`).join(', ')})`
                             }}
                             title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
                           ></div>
