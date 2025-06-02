@@ -1,4 +1,5 @@
 import { books, readingSessions, type Book, type InsertBook, type ReadingSession, type InsertReadingSession } from "@shared/schema";
+import { SQLiteStorage } from "./database";
 
 export interface IStorage {
   // Book operations
@@ -136,4 +137,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SQLiteStorage();
