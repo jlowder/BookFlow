@@ -223,20 +223,29 @@ export default function ReadingTimeline() {
                 {/* Month Labels */}
                 <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
                   <div className="w-8"></div>
-                  {gridData.monthLabels?.map((label, i) => (
-                    <div key={i} className="text-xs text-gray-600 dark:text-gray-400" style={{ marginLeft: `${label.weekIndex * 16}px` }}>
-                      {label.month}
-                    </div>
-                  ))}
+                  <div className="flex">
+                    {gridData.monthLabels?.map((label, i) => (
+                      <div 
+                        key={i} 
+                        className="text-xs text-gray-600 dark:text-gray-400"
+                        style={{ 
+                          position: 'absolute',
+                          left: `${32 + (label.weekIndex * 16)}px`
+                        }}
+                      >
+                        {label.month}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 {/* Grid with Day Labels - GitHub Style Horizontal Layout */}
                 <div className="flex">
                   {/* Day of Week Labels */}
-                  <div className="flex flex-col mr-2">
-                    <div className="h-3 mb-1"></div>
+                  <div className="flex flex-col">
+                    <div className="h-4 mb-1"></div>
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                      <div key={i} className="w-6 h-3 text-xs text-gray-500 text-right pr-1 mb-1 flex items-center justify-end">
+                      <div key={i} className="w-8 h-4 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
                         {day}
                       </div>
                     ))}
@@ -245,11 +254,11 @@ export default function ReadingTimeline() {
                   {/* Grid - Weeks flow horizontally */}
                   <div className="flex">
                     {gridData.weeks?.map((week: any, weekIndex: number) => (
-                      <div key={weekIndex} className="flex flex-col mr-1">
+                      <div key={weekIndex} className="flex flex-col">
                         {week.map((day: any, dayIndex: number) => (
                           <div
                             key={dayIndex}
-                            className="w-3 h-3 rounded-sm mb-1 border border-gray-200"
+                            className="w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200"
                             style={{
                               background: day.isEmpty 
                                 ? 'transparent'
