@@ -125,7 +125,7 @@ export default function ReadingTimeline() {
     let weekIndex = 0;
     
     while (currentDate <= endDate) {
-      const week = [];
+      const week = new Array(7).fill(null); // Pre-fill array with 7 slots for each day
       
       // Track month changes for labels - but only for dates within our actual range
       if (currentDate >= startDate && currentDate.getMonth() !== currentMonth) {
@@ -136,42 +136,55 @@ export default function ReadingTimeline() {
         });
       }
       
-      // Generate 7 days for this week
+      // Generate 7 days for this week, placing each day in the correct position
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         const dateStr = currentDate.toISOString().split('T')[0];
+        const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayData = dayMap.get(dateStr);
         
         if (dayData) {
           // Get unique books for this day (avoid duplicates from multiple sessions)
-          const uniqueBookIds = [...new Set(dayData.sessions.map((session: any) => session.bookId))];
+          const bookIds = dayData.sessions.map((session: any) => session.bookId) as number[];
+          const uniqueBookIds = bookIds.filter((id: number, index: number) => bookIds.indexOf(id) === index);
           const dayBooks = uniqueBookIds.map((bookId: number) => 
             books.find(book => book.id === bookId)
           ).filter(Boolean) as Book[];
           
           const colors = dayBooks.map(book => book.color);
           
-
-          
-          week.push({
+          week[actualDayOfWeek] = {
             date: dateStr,
             isEmpty: false,
             sessions: dayData.sessions,
             colors: colors.length > 0 ? colors : [],
             hasReading: dayData.hasReading
-          });
+          };
         } else {
           // Day outside our range or no data
           const isInRange = currentDate >= startDate && currentDate <= endDate;
-          week.push({
+          week[actualDayOfWeek] = {
             date: isInRange ? dateStr : '',
             isEmpty: !isInRange,
             sessions: [],
             colors: [],
             hasReading: false
-          });
+          };
         }
         
         currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Fill any null slots with empty days
+      for (let i = 0; i < 7; i++) {
+        if (week[i] === null) {
+          week[i] = {
+            date: '',
+            isEmpty: true,
+            sessions: [],
+            colors: [],
+            hasReading: false
+          };
+        }
       }
       
       weeks.push(week);
