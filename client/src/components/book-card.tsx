@@ -110,11 +110,7 @@ export default function BookCard({ book }: BookCardProps) {
                 variant="outline"
                 onClick={() => markReadMutation.mutate()}
                 disabled={markReadMutation.isPending || isMarked}
-                className={`text-xs transition-colors duration-200 ${
-                  isMarked 
-                    ? 'bg-accent-green text-white border-accent-green' 
-                    : 'hover:bg-gray-200'
-                }`}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 hover:bg-gray-200 bg-[#dcfce7]"
               >
                 <Check className="w-3 h-3 mr-1" />
                 {isMarked ? 'Recorded!' : 'Read Today'}
