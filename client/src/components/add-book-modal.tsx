@@ -54,6 +54,8 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
         description: "Successfully added to your reading list.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       onClose();
       resetModal();
     },
@@ -101,7 +103,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md w-full max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-md w-full max-h-[90vh] overflow-hidden" aria-describedby="add-book-description">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Add New Book
@@ -110,6 +112,9 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
             </Button>
           </DialogTitle>
         </DialogHeader>
+        <div id="add-book-description" className="sr-only">
+          Search for and add books to your reading list using the Google Books database
+        </div>
 
         <div className="overflow-y-auto p-1">
           <div className="space-y-4">
