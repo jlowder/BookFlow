@@ -8,13 +8,49 @@ import type { Book, ReadingSession } from "@shared/schema";
 export default function ReadingTimeline() {
   const [timeRange, setTimeRange] = useState("30");
 
+  // Generate month options for the last 12 months
+  const getMonthOptions = () => {
+    const months = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      
+      months.push({
+        value: `month-${i}`,
+        label: monthName,
+        days: daysInMonth,
+        startDate: date
+      });
+    }
+    
+    return months;
+  };
+
+  const monthOptions = getMonthOptions();
+
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
   });
 
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - parseInt(timeRange));
+  const getDateRange = () => {
+    if (timeRange.startsWith('month-')) {
+      const monthIndex = parseInt(timeRange.replace('month-', ''));
+      const monthOption = monthOptions[monthIndex];
+      const startDate = new Date(monthOption.startDate);
+      const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+      return { startDate, endDate };
+    } else {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - parseInt(timeRange));
+      return { startDate, endDate };
+    }
+  };
+
+  const { startDate, endDate } = getDateRange();
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
     queryKey: ["/api/reading-sessions", timeRange],
@@ -28,21 +64,20 @@ export default function ReadingTimeline() {
 
   // Generate timeline data
   const generateTimelineData = () => {
-    const days = parseInt(timeRange);
-    const today = new Date();
     const timeline = [];
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      const dateStr = current.toISOString().split('T')[0];
       const daySessions = sessions.filter(session => session.date === dateStr);
+      
       timeline.push({
         date: dateStr,
         sessions: daySessions,
         hasReading: daySessions.length > 0
       });
+      
+      current.setDate(current.getDate() + 1);
     }
 
     return timeline;
@@ -51,15 +86,18 @@ export default function ReadingTimeline() {
   const timelineData = generateTimelineData();
 
   const getDateLabels = () => {
-    const days = parseInt(timeRange);
-    const labelCount = Math.min(5, days);
-    const interval = Math.floor(days / (labelCount - 1));
+    const totalDays = timelineData.length;
+    const labelCount = Math.min(5, totalDays);
+    const interval = Math.max(1, Math.floor(totalDays / (labelCount - 1)));
     const labels = [];
 
     for (let i = 0; i < labelCount; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - (days - 1 - (i * interval)));
-      labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      const index = Math.min(i * interval, totalDays - 1);
+      const dayData = timelineData[index];
+      if (dayData) {
+        const date = new Date(dayData.date);
+        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      }
     }
 
     return labels;
@@ -97,6 +135,11 @@ export default function ReadingTimeline() {
             <SelectItem value="90">Last 3 months</SelectItem>
             <SelectItem value="180">Last 6 months</SelectItem>
             <SelectItem value="365">This year</SelectItem>
+            {monthOptions.map((month) => (
+              <SelectItem key={month.value} value={month.value}>
+                {month.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
