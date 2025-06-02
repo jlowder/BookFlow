@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, CheckCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -192,6 +192,9 @@ export default function BookCard({ book }: BookCardProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Notes for "{book.title}"</DialogTitle>
+            <DialogDescription>
+              Add your thoughts, quotes, or notes about this book
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Textarea
