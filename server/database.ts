@@ -11,8 +11,16 @@ export class SQLiteStorage implements IStorage {
     const dbPath = process.env.NODE_ENV === 'production' 
       ? '/app/data/reading_journal.db'
       : join(process.cwd(), 'reading_journal.db');
-    this.db = new Database(dbPath);
-    this.initializeTables();
+    
+    try {
+      console.log(`[SQLiteStorage] Attempting to open database at: ${dbPath}`);
+      this.db = new Database(dbPath);
+      console.log(`[SQLiteStorage] Database opened successfully`);
+      this.initializeTables();
+    } catch (error) {
+      console.error(`[SQLiteStorage] Failed to open database at ${dbPath}:`, error);
+      throw error;
+    }
   }
 
   private initializeTables() {
