@@ -16,6 +16,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Build the application
 RUN npm run build
 
@@ -26,12 +30,6 @@ RUN npm run build
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-# Create data directory for database with proper permissions
-RUN mkdir -p /app/data && chmod 777 /app/data
-
-# Switch to non-root user
-USER nextjs
-
 # Expose port
 EXPOSE 3000
 
@@ -39,5 +37,6 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Start the application
+# Use entrypoint script to handle permissions
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["npm", "start"]

@@ -144,22 +144,36 @@ export class SQLiteStorage implements IStorage {
   }
 
   async createReadingSession(insertSession: InsertReadingSession): Promise<ReadingSession> {
-    const stmt = this.db.prepare(`
-      INSERT INTO reading_sessions (bookId, date, pagesRead, duration, notes)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
-      insertSession.bookId,
-      insertSession.date,
-      insertSession.pagesRead || null,
-      insertSession.duration || null,
-      insertSession.notes || null
-    );
+    try {
+      console.log(`[SQLiteStorage] Creating reading session:`, insertSession);
+      
+      const stmt = this.db.prepare(`
+        INSERT INTO reading_sessions (bookId, date, pagesRead, duration, notes)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      const result = stmt.run(
+        insertSession.bookId,
+        insertSession.date,
+        insertSession.pagesRead || null,
+        insertSession.duration || null,
+        insertSession.notes || null
+      );
 
-    const session = this.getReadingSession(result.lastInsertRowid as number);
-    if (!session) throw new Error('Failed to create reading session');
-    return session;
+      console.log(`[SQLiteStorage] Insert result:`, result);
+
+      const session = this.getReadingSession(result.lastInsertRowid as number);
+      if (!session) {
+        console.error(`[SQLiteStorage] Failed to retrieve created session with ID: ${result.lastInsertRowid}`);
+        throw new Error('Failed to create reading session');
+      }
+      
+      console.log(`[SQLiteStorage] Successfully created session:`, session);
+      return session;
+    } catch (error) {
+      console.error(`[SQLiteStorage] Error creating reading session:`, error);
+      throw error;
+    }
   }
 
   async deleteReadingSession(id: number): Promise<boolean> {

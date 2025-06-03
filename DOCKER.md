@@ -204,15 +204,13 @@ volumes:
 ```
 
 **"Failed to record reading session" or write errors**
-This indicates a database permissions issue. Fix with:
+This indicates a database permissions issue. The latest Docker configuration includes an entrypoint script that automatically fixes permissions. If you still see this error:
 ```bash
-# Stop the container
+# Rebuild the container with the latest fixes
 docker-compose down
-
-# Fix permissions on the host
-sudo chown 1001:1001 /opt/BookFlow/reading_journal.db
-sudo chmod 666 /opt/BookFlow/reading_journal.db
-
-# Restart the container
+docker-compose build --no-cache
 docker-compose up -d
+
+# If the problem persists, check container logs for specific errors
+docker-compose logs reading-journal
 ```
