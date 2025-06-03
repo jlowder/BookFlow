@@ -1,55 +1,144 @@
 # Reading Journal - Server Deployment Guide
 
-This guide will help you deploy the Reading Journal application on your own server using systemd.
+This guide covers multiple deployment options for the Reading Journal application on your own server.
 
 ## Prerequisites
 
 - Ubuntu/Debian server with root access
-- Node.js 18+ installed
-- npm installed
 - Git installed
 
-## Installation Steps
+## Deployment Options
 
-### 1. Install Node.js (if not already installed)
+Choose one of the following deployment methods:
+
+### Option 1: Docker Deployment (Recommended)
+
+This is the easiest and most reliable deployment method.
+
+#### Prerequisites for Docker
+- Docker and Docker Compose installed
+
+#### Install Docker (if not already installed)
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+#### Deploy with Docker
+```bash
+# Clone the repository
+git clone [YOUR_REPO_URL] /opt/BookFlow
+cd /opt/BookFlow
+
+# Create the database directory
+sudo mkdir -p /opt/BookFlow/data
+sudo chmod 755 /opt/BookFlow/data
+
+# Deploy the application
+docker-compose up -d
+```
+
+The application will be available at `http://localhost:3000`
+
+#### Custom Database Location
+To use the database at `/opt/BookFlow/reading_journal.db`, update the docker-compose.yml:
+
+```yaml
+version: '3.8'
+
+services:
+  reading-journal:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /opt/BookFlow:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+#### Docker Management Commands
+```bash
+# View logs
+docker-compose logs -f
+
+# Stop the application
+docker-compose down
+
+# Update the application
+cd /opt/BookFlow
+git pull
+docker-compose down
+docker-compose up -d --build
+
+# Backup database
+cp /opt/BookFlow/reading_journal.db /opt/BookFlow/reading_journal_backup_$(date +%Y%m%d).db
+```
+
+### Option 2: Systemd Service Deployment
+
+#### Prerequisites for Systemd
+- Node.js 18+ installed
+- npm installed
+
+## Installation Steps for Systemd
+
+#### 1. Install Node.js (if not already installed)
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
-### 2. Create application directory
+#### 2. Create application directory
 
 ```bash
-sudo mkdir -p /var/www/reading-journal
-sudo chown www-data:www-data /var/www/reading-journal
+sudo mkdir -p /opt/BookFlow
+sudo chown www-data:www-data /opt/BookFlow
 ```
 
-### 3. Clone and setup the application
+#### 3. Clone and setup the application
 
 ```bash
-cd /var/www/reading-journal
+cd /opt/BookFlow
 sudo -u www-data git clone [YOUR_REPO_URL] .
 sudo -u www-data npm install
 sudo -u www-data npm run build
 ```
 
-### 4. Install the systemd service
+#### 4. Install the systemd service
+
+Update the systemd service file to use the correct path:
 
 ```bash
+# Edit the service file to use /opt/BookFlow
+sudo sed -i 's|/var/www/reading-journal|/opt/BookFlow|g' reading-journal.service
 sudo cp reading-journal.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable reading-journal
 ```
 
-### 5. Start the service
+#### 5. Start the service
 
 ```bash
 sudo systemctl start reading-journal
 sudo systemctl status reading-journal
 ```
 
-### 6. Setup Nginx reverse proxy (optional but recommended)
+## Nginx Reverse Proxy Setup (For Both Deployment Methods)
 
 Create `/etc/nginx/sites-available/reading-journal`:
 
@@ -79,7 +168,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## Service Management
+## Service Management (Systemd Only)
 
 ### Check service status
 ```bash
@@ -103,10 +192,17 @@ sudo systemctl stop reading-journal
 
 ## Updates
 
-To update the application:
-
+### Docker Updates
 ```bash
-cd /var/www/reading-journal
+cd /opt/BookFlow
+git pull
+docker-compose down
+docker-compose up -d --build
+```
+
+### Systemd Updates
+```bash
+cd /opt/BookFlow
 sudo systemctl stop reading-journal
 sudo -u www-data git pull
 sudo -u www-data npm install
@@ -116,7 +212,18 @@ sudo systemctl start reading-journal
 
 ## Configuration
 
-The application runs on port 3000 by default. To change this, edit the systemd service file:
+### Docker Configuration
+Edit `docker-compose.yml` to change ports or environment variables:
+
+```yaml
+ports:
+  - "8080:3000"  # Change external port
+environment:
+  - PORT=3000    # Internal port stays the same
+```
+
+### Systemd Configuration
+To change the port for systemd deployment:
 
 ```bash
 sudo systemctl edit reading-journal
@@ -130,18 +237,50 @@ Environment=PORT=8080
 
 ## Database
 
-The application uses SQLite and will automatically create the database file in the application directory. Make sure the www-data user has write permissions to the directory.
+### Database Location
+- **Docker**: `/opt/BookFlow/reading_journal.db` (mapped from container's `/app/data/`)
+- **Systemd**: `/opt/BookFlow/reading_journal.db`
+
+### Database Backup
+```bash
+# Create timestamped backup
+cp /opt/BookFlow/reading_journal.db /opt/BookFlow/reading_journal_backup_$(date +%Y%m%d_%H%M%S).db
+
+# Automated daily backup (add to crontab)
+0 2 * * * cp /opt/BookFlow/reading_journal.db /opt/BookFlow/backups/reading_journal_$(date +\%Y\%m\%d).db
+```
 
 ## Troubleshooting
 
-### Service won't start
+### Docker Troubleshooting
+```bash
+# Check container status
+docker-compose ps
+
+# View container logs
+docker-compose logs -f
+
+# Restart containers
+docker-compose restart
+
+# Check disk space
+df -h
+```
+
+### Systemd Troubleshooting
 - Check logs: `sudo journalctl -u reading-journal -f`
 - Verify Node.js installation: `node --version`
-- Check file permissions: `ls -la /var/www/reading-journal`
+- Check file permissions: `ls -la /opt/BookFlow`
 
-### Port already in use
-- Check what's using the port: `sudo netstat -tlnp | grep :3000`
-- Change the port in the systemd service file
+### Common Issues
+- **Port already in use**: `sudo netstat -tlnp | grep :3000`
+- **Database permissions**: `sudo chown -R www-data:www-data /opt/BookFlow` (systemd only)
+- **Docker permissions**: `sudo chown -R 1001:1001 /opt/BookFlow` (Docker only)
 
-### Database permissions
-- Ensure www-data can write to the directory: `sudo chown -R www-data:www-data /var/www/reading-journal`
+### SSL/HTTPS Setup
+For production deployment with SSL, use Let's Encrypt with Nginx:
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
