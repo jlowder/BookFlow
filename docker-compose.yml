@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - reading-journal-data:/app/data
+      - /opt/BookFlow:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -16,7 +16,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-volumes:
-  reading-journal-data:
-    driver: local

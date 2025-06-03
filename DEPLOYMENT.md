@@ -32,13 +32,16 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 #### Deploy with Docker
 ```bash
-# Clone the repository
-git clone [YOUR_REPO_URL] /opt/BookFlow
+# Create the directory structure
+sudo mkdir -p /opt/BookFlow
 cd /opt/BookFlow
 
-# Create the database directory
-sudo mkdir -p /opt/BookFlow/data
-sudo chmod 755 /opt/BookFlow/data
+# Clone the repository
+sudo git clone [YOUR_REPO_URL] .
+
+# Set proper permissions for database storage
+sudo chown -R 1001:1001 /opt/BookFlow
+sudo chmod 755 /opt/BookFlow
 
 # Deploy the application
 docker-compose up -d
@@ -46,29 +49,7 @@ docker-compose up -d
 
 The application will be available at `http://localhost:3000`
 
-#### Custom Database Location
-To use the database at `/opt/BookFlow/reading_journal.db`, update the docker-compose.yml:
-
-```yaml
-version: '3.8'
-
-services:
-  reading-journal:
-    build: .
-    ports:
-      - "3000:3000"
-    volumes:
-      - /opt/BookFlow:/app/data
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
+The database will be stored at `/opt/BookFlow/reading_journal.db` on your host system.
 
 #### Docker Management Commands
 ```bash
