@@ -7,8 +7,11 @@ export class SQLiteStorage implements IStorage {
   private db: Database.Database;
 
   constructor() {
-    // Create database file in the project root
-    this.db = new Database(join(process.cwd(), 'reading_journal.db'));
+    // Use external data directory for Docker persistence
+    const dbPath = process.env.NODE_ENV === 'production' 
+      ? '/app/data/reading_journal.db'
+      : join(process.cwd(), 'reading_journal.db');
+    this.db = new Database(dbPath);
     this.initializeTables();
   }
 
