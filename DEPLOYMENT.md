@@ -43,6 +43,11 @@ sudo git clone [YOUR_REPO_URL] .
 sudo chown -R 1001:1001 /opt/BookFlow
 sudo chmod 755 /opt/BookFlow
 
+# Ensure the container can write to the database file
+sudo touch /opt/BookFlow/reading_journal.db
+sudo chown 1001:1001 /opt/BookFlow/reading_journal.db
+sudo chmod 666 /opt/BookFlow/reading_journal.db
+
 # Deploy the application
 docker-compose up -d
 ```

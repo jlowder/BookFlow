@@ -202,3 +202,17 @@ Ensure the volume mount is correct in docker-compose.yml:
 volumes:
   - /opt/BookFlow:/app/data
 ```
+
+**"Failed to record reading session" or write errors**
+This indicates a database permissions issue. Fix with:
+```bash
+# Stop the container
+docker-compose down
+
+# Fix permissions on the host
+sudo chown 1001:1001 /opt/BookFlow/reading_journal.db
+sudo chmod 666 /opt/BookFlow/reading_journal.db
+
+# Restart the container
+docker-compose up -d
+```

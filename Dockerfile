@@ -26,8 +26,8 @@ RUN npm run build
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-# Create data directory for database
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+# Create data directory for database with proper permissions
+RUN mkdir -p /app/data && chmod 777 /app/data
 
 # Switch to non-root user
 USER nextjs
