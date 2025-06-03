@@ -147,7 +147,18 @@ sudo systemctl reload nginx
 
 ### Container won't start
 ```bash
-docker logs reading-journal
+# Check container logs for errors
+docker-compose logs reading-journal
+
+# Check if container is running
+docker-compose ps
+```
+
+### Build fails with missing dependencies
+If you see errors about missing Vite or other modules:
+```bash
+# Clean build without cache
+docker-compose build --no-cache
 ```
 
 ### Port already in use
@@ -155,8 +166,9 @@ docker logs reading-journal
 # Check what's using the port
 sudo netstat -tlnp | grep :3000
 
-# Use a different port
-docker run -p 8080:3000 ...
+# Use a different port in docker-compose.yml
+ports:
+  - "8080:3000"
 ```
 
 ### Database permissions
@@ -164,10 +176,29 @@ The container automatically creates the correct permissions for the database dir
 
 ### Health check
 ```bash
-# Check container health
-docker ps
-# Look for "healthy" status
+# Check container health status
+docker-compose ps
 
 # Manual health check
 curl http://localhost:3000
+
+# Check application logs
+docker-compose logs -f reading-journal
+```
+
+### Common Error Solutions
+
+**"Cannot find package 'vite'"**
+This has been resolved in the latest Dockerfile. Rebuild without cache:
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+**Database file not persisting**
+Ensure the volume mount is correct in docker-compose.yml:
+```yaml
+volumes:
+  - /opt/BookFlow:/app/data
 ```

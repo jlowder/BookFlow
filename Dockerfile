@@ -19,8 +19,8 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Remove dev dependencies to reduce image size
-RUN npm prune --production
+# Don't prune dependencies since Vite is needed at runtime for the server
+# The server imports vite.ts which requires Vite dependencies even in production
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
