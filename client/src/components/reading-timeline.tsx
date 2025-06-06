@@ -357,7 +357,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
                                         ? `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
                                         : `linear-gradient(90deg, ${day.colors.slice(0, 4).map((color: string, i: number) => `${color} ${i * 25}% ${(i + 1) * 25}%`).join(', ')})`
                             }}
-                            title={day.isEmpty ? '' : new Date(day.date).toLocaleDateString()}
+                            title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
                             onClick={() => handleGridCellClick(day)}
                           ></div>
                         ))}
