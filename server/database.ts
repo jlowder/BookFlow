@@ -192,20 +192,28 @@ export class SQLiteStorage implements IStorage {
     const dates = stmt.all() as { date: string }[];
     
     let streak = 0;
-    const today = new Date().toISOString().split('T')[0];
-    let currentDate = today;
+    // Use local timezone for today's date
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    let currentDate = todayStr;
+    
+    console.log(`[SQLiteStorage] Calculating streak. Today: ${todayStr}, Available dates:`, dates.map(d => d.date));
     
     for (const { date } of dates) {
       if (date === currentDate) {
         streak++;
-        const prevDate = new Date(currentDate);
+        console.log(`[SQLiteStorage] Found reading session for ${date}, streak now: ${streak}`);
+        // Calculate previous date using local timezone
+        const prevDate = new Date(currentDate + 'T00:00:00');
         prevDate.setDate(prevDate.getDate() - 1);
-        currentDate = prevDate.toISOString().split('T')[0];
+        currentDate = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`;
       } else {
+        console.log(`[SQLiteStorage] No reading session for ${currentDate}, breaking streak at ${streak}`);
         break;
       }
     }
     
+    console.log(`[SQLiteStorage] Final streak: ${streak}`);
     return streak;
   }
 
