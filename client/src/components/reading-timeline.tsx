@@ -165,8 +165,11 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     
     const weeks = [];
     const monthLabels = [];
-    const startDate = new Date(timelineData[0].date);
-    const endDate = new Date(timelineData[timelineData.length - 1].date);
+    // Parse dates without timezone issues
+    const startDateStr = timelineData[0].date;
+    const endDateStr = timelineData[timelineData.length - 1].date;
+    const startDate = new Date(startDateStr + 'T00:00:00');
+    const endDate = new Date(endDateStr + 'T00:00:00');
     
     // Create a map for quick lookup of timeline data
     const dayMap = new Map();
