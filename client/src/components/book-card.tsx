@@ -42,6 +42,7 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
       setTimeout(() => setIsMarked(false), 2000);
       
       queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
     onError: () => {
       toast({

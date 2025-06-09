@@ -43,6 +43,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
         title: "Reading session updated",
         description: "Your reading progress has been updated",
