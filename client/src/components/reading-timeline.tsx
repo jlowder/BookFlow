@@ -147,13 +147,25 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     
     for (let i = 0; i < totalDays; i++) {
       const day = timelineData[i];
+      const currentDate = day.date;
       const hasSession = day.sessions.some(session => session.bookId === book.id);
       const width = 100 / totalDays;
       
+      // Check if this date is within the book's active period
+      const isBeforeStart = book.startDate && currentDate < book.startDate;
+      const isAfterCompletion = book.completedDate && currentDate > book.completedDate;
+      const isVisible = !isBeforeStart && !isAfterCompletion;
+      
+      // Special handling for completion date - show checkmark
+      const isCompletionDate = book.completedDate && currentDate === book.completedDate;
+      
       segments.push({
         width: `${width}%`,
-        opacity: hasSession ? 0.8 : 0.3,
-        color: book.color
+        opacity: isVisible ? (hasSession ? 0.8 : 0.3) : 0,
+        color: book.color,
+        isVisible,
+        isCompletionDate,
+        hasSession
       });
     }
     
@@ -395,21 +407,22 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
                           {segments.map((segment, i) => (
                             <div 
                               key={i}
-                              className="h-full"
+                              className="h-full relative"
                               style={{ 
                                 width: segment.width,
-                                backgroundColor: segment.color,
-                                opacity: segment.opacity
+                                backgroundColor: segment.isVisible ? segment.color : 'transparent',
+                                opacity: segment.isVisible ? segment.opacity : 0
                               }}
-                            ></div>
-                          ))}
-                          {isCompleted && (
-                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                                <Check className="w-3 h-3" style={{ color: book.color }} />
-                              </div>
+                            >
+                              {segment.isCompletionDate && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center border-2" style={{ borderColor: book.color }}>
+                                    <Check className="w-2 h-2" style={{ color: book.color }} />
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     );
