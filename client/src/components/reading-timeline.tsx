@@ -141,6 +141,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   };
 
   const timelineData = generateTimelineData();
+  
+  // Debug timeline data
+  console.log(`Timeline data has ${timelineData.length} days`);
+  console.log(`First day: ${timelineData[0]?.date}, Last day: ${timelineData[timelineData.length - 1]?.date}`);
 
   const getDateLabels = () => {
     const totalDays = timelineData.length;
@@ -152,11 +156,12 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
       const index = Math.min(i * interval, totalDays - 1);
       const dayData = timelineData[index];
       if (dayData) {
-        const date = new Date(dayData.date);
+        const date = new Date(dayData.date + 'T00:00:00'); // Fix timezone issues
         labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
       }
     }
-
+    
+    console.log(`Generated labels:`, labels);
     return labels;
   };
 
