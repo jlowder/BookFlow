@@ -148,15 +148,33 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const getDateLabels = () => {
     const totalDays = timelineData.length;
+    if (totalDays === 0) return [];
+    
     const labelCount = Math.min(5, totalDays);
-    const interval = Math.max(1, Math.floor(totalDays / (labelCount - 1)));
     const labels = [];
 
-    for (let i = 0; i < labelCount; i++) {
-      const index = Math.min(i * interval, totalDays - 1);
-      const dayData = timelineData[index];
-      if (dayData) {
-        const date = new Date(dayData.date + 'T00:00:00'); // Fix timezone issues
+    if (labelCount === 1) {
+      // If only one label, show the last day
+      const dayData = timelineData[totalDays - 1];
+      const date = new Date(dayData.date + 'T00:00:00');
+      labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    } else {
+      // Calculate interval for intermediate labels
+      const interval = Math.floor((totalDays - 1) / (labelCount - 1));
+      
+      for (let i = 0; i < labelCount - 1; i++) {
+        const index = i * interval;
+        const dayData = timelineData[index];
+        if (dayData) {
+          const date = new Date(dayData.date + 'T00:00:00');
+          labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+      }
+      
+      // Always ensure the last label shows the actual end date
+      const lastDayData = timelineData[totalDays - 1];
+      if (lastDayData) {
+        const date = new Date(lastDayData.date + 'T00:00:00');
         labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
       }
     }
