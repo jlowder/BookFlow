@@ -91,10 +91,12 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   const { startDate, endDate } = getDateRange();
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange],
+    queryKey: ["/api/reading-sessions", timeRange, endDate.toISOString().split('T')[0]],
     queryFn: () => 
       fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
         .then(res => res.json()),
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to catch date changes
+    staleTime: 2 * 60 * 1000, // Consider data stale after 2 minutes
   });
 
   const currentBooks = books.filter(book => book.status === "reading");
