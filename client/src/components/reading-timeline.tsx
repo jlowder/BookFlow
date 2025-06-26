@@ -95,6 +95,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const { startDate, endDate } = getDateRange();
   
+  // Debug logging to see what dates we're actually using
+  console.log(`Timeline date range: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+  console.log(`Today should be: ${new Date().toISOString().split('T')[0]}`);
+  
   // Calculate current timestamp to force fresh queries when date changes
   const currentTimestamp = Math.floor(Date.now() / (24 * 60 * 60 * 1000)); // Changes daily
   
