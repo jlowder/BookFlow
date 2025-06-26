@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Info, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Book, ReadingSession } from "@shared/schema";
@@ -16,6 +16,11 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   const [timeRange, setTimeRange] = useState("30");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Force cache invalidation on mount to ensure fresh data
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+  }, [queryClient]);
 
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
@@ -90,13 +95,21 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const { startDate, endDate } = getDateRange();
   
+  // Calculate current timestamp to force fresh queries when date changes
+  const currentTimestamp = Math.floor(Date.now() / (24 * 60 * 60 * 1000)); // Changes daily
+  
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, endDate.toISOString().split('T')[0]],
+    queryKey: ["/api/reading-sessions", timeRange, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
     queryFn: () => 
-      fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`)
-        .then(res => res.json()),
+      fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }).then(res => res.json()),
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to catch date changes
-    staleTime: 2 * 60 * 1000, // Consider data stale after 2 minutes
+    staleTime: 0, // Never use stale data - always refetch when date changes
   });
 
   const currentBooks = books.filter(book => book.status === "reading");
