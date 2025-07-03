@@ -23,10 +23,14 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
 
   const markReadMutation = useMutation({
     mutationFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      // Use local timezone instead of UTC
+      const today = new Date();
+      const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
+      const todayLocal = localDate.toISOString().split('T')[0];
+      
       await apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,
-        date: today,
+        date: todayLocal,
         pagesRead: 1,
         duration: 30,
       });
