@@ -96,6 +96,9 @@ BookFlow is a full-stack reading journal application built with React/TypeScript
 
 ```
 Changelog:
+- July 3, 2025. Fixed timezone issues with "Read Today" button - now uses local timezone instead of UTC
+- June 26, 2025. Fixed timeline date labels to show current date automatically
+- June 26, 2025. Enhanced timeline with dynamic updates and proper date range display
 - June 26, 2025. Initial setup
 ```
 
