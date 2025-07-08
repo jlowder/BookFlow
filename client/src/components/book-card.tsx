@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Check, CheckCircle, FileText, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import BookDetailsModal from "./book-details-modal";
 import type { Book } from "@shared/schema";
 
 interface BookCardProps {
@@ -17,6 +18,7 @@ interface BookCardProps {
 export default function BookCard({ book, isEditMode = false, onEditModeToggle }: BookCardProps) {
   const [isMarked, setIsMarked] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -127,7 +129,8 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
         <img 
           src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=450"} 
           alt={book.title}
-          className="w-16 h-24 object-cover rounded-lg shadow-sm flex-shrink-0" 
+          className="w-16 h-24 object-cover rounded-lg shadow-sm flex-shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200" 
+          onClick={() => setIsDetailsOpen(true)}
         />
         
         <div className="flex-1 min-w-0">
@@ -243,6 +246,13 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Book Details Modal */}
+      <BookDetailsModal 
+        book={book}
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+      />
     </div>
   );
 }
