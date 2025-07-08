@@ -6,10 +6,13 @@ import type { Book } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
+import BookDetailsModal from "@/components/book-details-modal";
 
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
 
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
@@ -25,6 +28,16 @@ export default function Home() {
 
   const handleEditModeToggle = (bookId: number) => {
     setEditModeBookId(editModeBookId === bookId ? null : bookId);
+  };
+
+  const handleBookClick = (book: Book) => {
+    setSelectedBook(book);
+    setIsBookDetailsOpen(true);
+  };
+
+  const handleCloseBookDetails = () => {
+    setIsBookDetailsOpen(false);
+    setSelectedBook(null);
   };
 
   return (
@@ -135,7 +148,7 @@ export default function Home() {
           {completedBooks.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
               {completedBooks.map((book: Book) => (
-                <div key={book.id} className="group cursor-pointer">
+                <div key={book.id} className="group cursor-pointer" onClick={() => handleBookClick(book)}>
                   <img 
                     src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=450"} 
                     alt={book.title}
@@ -158,6 +171,12 @@ export default function Home() {
       <AddBookModal 
         isOpen={isAddBookModalOpen} 
         onClose={() => setIsAddBookModalOpen(false)} 
+      />
+      
+      <BookDetailsModal 
+        book={selectedBook}
+        isOpen={isBookDetailsOpen}
+        onClose={handleCloseBookDetails}
       />
     </div>
   );
