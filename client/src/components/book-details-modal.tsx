@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, FileText, BookOpen, CheckCircle } from "lucide-react";
+import { Calendar, FileText, BookOpen, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Book, ReadingSession } from "@shared/schema";
 
@@ -30,8 +30,6 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
   if (!book) return null;
 
   const bookSessions = sessions.filter(session => session.bookId === book.id);
-  const totalPagesRead = bookSessions.reduce((sum, session) => sum + (session.pagesRead || 0), 0);
-  const totalDuration = bookSessions.reduce((sum, session) => sum + (session.duration || 0), 0);
 
   // Generate timeline visualization for this book
   const generateBookTimeline = () => {
@@ -79,12 +77,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
     }
   };
 
-  const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -149,23 +142,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
             </div>
 
             {/* Reading Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4" />
-                  Sessions
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{bookSessions.length}</div>
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <BookOpen className="w-4 h-4" />
-                  Pages Read
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{totalPagesRead}</div>
-              </div>
-              
+            <div className="grid grid-cols-1 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="w-4 h-4" />
@@ -225,24 +202,16 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {bookSessions.map((session) => (
                         <div key={session.id} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { 
-                                  weekday: 'short', 
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}
-                              </div>
-                              {session.notes && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{session.notes}</p>
-                              )}
-                            </div>
-                            <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-                              {session.pagesRead && <div>{session.pagesRead} pages</div>}
-                              {session.duration && <div>{formatDuration(session.duration)}</div>}
-                            </div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { 
+                              weekday: 'short', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </div>
+                          {session.notes && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{session.notes}</p>
+                          )}
                         </div>
                       ))}
                     </div>
