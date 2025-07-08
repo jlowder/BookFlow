@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, FileText, BookOpen, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,7 +13,17 @@ interface BookDetailsModalProps {
 
 export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProps) {
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions"],
+    queryKey: ["/api/reading-sessions", "all"],
+    queryFn: async () => {
+      // Get all sessions by using a wide date range
+      const startDate = "2020-01-01";
+      const endDate = "2030-12-31";
+      const response = await fetch(`/api/reading-sessions?startDate=${startDate}&endDate=${endDate}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch reading sessions');
+      }
+      return response.json();
+    },
     enabled: isOpen && !!book,
   });
 
@@ -84,6 +94,9 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
             <BookOpen className="w-5 h-5" />
             Book Details
           </DialogTitle>
+          <DialogDescription>
+            View detailed information, reading history, and notes for this book.
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="max-h-[calc(90vh-8rem)]">
@@ -136,7 +149,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
             </div>
 
             {/* Reading Statistics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="w-4 h-4" />
@@ -155,20 +168,10 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
               
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Clock className="w-4 h-4" />
-                  Time Spent
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {totalDuration > 0 ? formatDuration(totalDuration) : '0m'}
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="w-4 h-4" />
                   Days Active
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{timelineData.length}</div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">{bookSessions.length}</div>
               </div>
             </div>
 
