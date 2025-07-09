@@ -196,26 +196,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
                     </div>
                   </div>
 
-                  {/* Session Details */}
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900 dark:text-white">Reading Sessions</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {bookSessions.map((session) => (
-                        <div key={session.id} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { 
-                              weekday: 'short', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })}
-                          </div>
-                          {session.notes && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{session.notes}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+
                 </div>
               </div>
             )}
