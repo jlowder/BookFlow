@@ -141,7 +141,7 @@ export default function Home() {
         {/* Completed Books */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-primary">Completed This Year</h2>
+            <h2 className="text-2xl font-bold text-primary">Completed Books</h2>
             <span className="text-sm text-secondary">{completedBooks.length} books completed</span>
           </div>
           
