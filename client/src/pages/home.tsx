@@ -154,7 +154,8 @@ export default function Home() {
                     alt={book.title}
                     className="w-full h-32 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-200" 
                   />
-                  <p className="text-xs text-secondary mt-2 truncate">{book.title}</p>
+                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 truncate font-medium">{book.title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{book.author}</p>
                 </div>
               ))}
             </div>
