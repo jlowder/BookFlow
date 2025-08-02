@@ -19,7 +19,21 @@ const colors = [
   "#D946EF", // fuchsia
 ];
 
-function getRandomColor() {
+async function getUniqueColor() {
+  // Get all existing books to check their colors
+  const existingBooks = await storage.getBooks();
+  const usedColors = existingBooks.map(book => book.color);
+  
+  // Find available colors that aren't currently in use
+  const availableColors = colors.filter(color => !usedColors.includes(color));
+  
+  // If we have available colors, use one of them
+  if (availableColors.length > 0) {
+    return availableColors[Math.floor(Math.random() * availableColors.length)];
+  }
+  
+  // If all colors are used, fall back to random selection
+  // This handles cases where there are more books than available colors
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
@@ -54,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bookData = insertBookSchema.parse({
         ...req.body,
-        color: getRandomColor()
+        color: await getUniqueColor()
       });
       
       const book = await storage.createBook(bookData);
