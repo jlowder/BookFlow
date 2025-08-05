@@ -61,7 +61,7 @@ export default function DataManagement() {
       const response = await apiRequest("POST", "/api/import/csv", {
         csvData: importData
       });
-      const result = response as { results: { books: { created: number; updated: number; errors: number }; sessions: { created: number; errors: number } } };
+      const result = await response.json() as { results: { books: { created: number; updated: number; errors: number }; sessions: { created: number; errors: number } } };
       
       toast({
         title: "Import successful",
