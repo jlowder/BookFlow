@@ -27,7 +27,12 @@ export default function DataManagement() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'reading_journal_backup.csv';
+      
+      // Create filename with current date
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      a.download = `reading_journal_backup_${dateStr}.csv`;
+      
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
