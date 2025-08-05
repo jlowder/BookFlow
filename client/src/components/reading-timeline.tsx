@@ -120,6 +120,8 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   const booksWithSessionsInRange = books.filter(book => {
     return sessions.some(session => session.bookId === book.id);
   });
+  
+  console.log(`Frontend received ${sessions.length} sessions for ${timeRange} days:`, sessions.map(s => `${s.id}:${s.date}`));
 
   // Generate timeline data
   const generateTimelineData = () => {
