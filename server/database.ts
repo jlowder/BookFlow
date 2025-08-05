@@ -128,6 +128,11 @@ export class SQLiteStorage implements IStorage {
     return result.changes > 0;
   }
 
+  async getAllReadingSessions(): Promise<ReadingSession[]> {
+    const stmt = this.db.prepare('SELECT * FROM reading_sessions ORDER BY date DESC');
+    return stmt.all() as ReadingSession[];
+  }
+
   async getReadingSessions(bookId: number): Promise<ReadingSession[]> {
     const stmt = this.db.prepare('SELECT * FROM reading_sessions WHERE bookId = ? ORDER BY date DESC');
     return stmt.all(bookId) as ReadingSession[];

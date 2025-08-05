@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, Flame, Library } from "lucide-react";
+import { BookOpen, Plus, Flame, Library, Database } from "lucide-react";
 import type { Book } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
@@ -68,6 +69,13 @@ export default function Home() {
                   <span className="font-medium">{stats.totalBooks} completed</span>
                 </span>
               </div>
+              
+              <Link href="/data-management">
+                <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                  <Database className="w-4 h-4" />
+                  <span className="hidden sm:inline">Data</span>
+                </Button>
+              </Link>
               
               <Button 
                 onClick={() => setIsAddBookModalOpen(true)}

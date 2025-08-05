@@ -11,6 +11,7 @@ export interface IStorage {
   deleteBook(id: number): Promise<boolean>;
   
   // Reading session operations
+  getAllReadingSessions(): Promise<ReadingSession[]>;
   getReadingSessions(bookId: number): Promise<ReadingSession[]>;
   getReadingSessionsByDate(date: string): Promise<ReadingSession[]>;
   getReadingSessionsInRange(startDate: string, endDate: string): Promise<ReadingSession[]>;
@@ -82,6 +83,10 @@ export class MemStorage implements IStorage {
 
   async deleteBook(id: number): Promise<boolean> {
     return this.books.delete(id);
+  }
+
+  async getAllReadingSessions(): Promise<ReadingSession[]> {
+    return Array.from(this.readingSessions.values());
   }
 
   async getReadingSessions(bookId: number): Promise<ReadingSession[]> {

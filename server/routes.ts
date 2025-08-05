@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBookSchema, insertReadingSessionSchema } from "@shared/schema";
 import { z } from "zod";
+import { parse } from "csv-parse";
+import { stringify } from "csv-stringify";
 
 const colors = [
   "#EC4899", // pink
@@ -204,6 +206,178 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: "Failed to search books" });
+    }
+  });
+
+  // Export data to CSV
+  app.get("/api/export/csv", async (req, res) => {
+    try {
+      const [books, sessions] = await Promise.all([
+        storage.getBooks(),
+        storage.getAllReadingSessions()
+      ]);
+
+      // Prepare CSV data with both books and sessions
+      const csvData = [];
+      
+      // Add header row
+      csvData.push([
+        'Type', 'BookId', 'Title', 'Author', 'Color', 'CoverUrl', 'TotalPages', 
+        'CurrentPage', 'Status', 'StartDate', 'CompletedDate', 'Notes',
+        'SessionId', 'SessionDate', 'PagesRead', 'Duration', 'SessionNotes'
+      ]);
+
+      // Add books with their sessions
+      for (const book of books) {
+        const bookSessions = sessions.filter(s => s.bookId === book.id);
+        
+        if (bookSessions.length > 0) {
+          // Book with sessions
+          for (const session of bookSessions) {
+            csvData.push([
+              'book_with_session', book.id, book.title, book.author, book.color,
+              book.coverUrl || '', book.totalPages || '', book.currentPage || '',
+              book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+              session.id, session.date, session.pagesRead || '', session.duration || '', session.notes || ''
+            ]);
+          }
+        } else {
+          // Book without sessions
+          csvData.push([
+            'book_only', book.id, book.title, book.author, book.color,
+            book.coverUrl || '', book.totalPages || '', book.currentPage || '',
+            book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+            '', '', '', '', ''
+          ]);
+        }
+      }
+
+      // Convert to CSV string
+      stringify(csvData, (err, output) => {
+        if (err) {
+          return res.status(500).json({ error: "Failed to generate CSV" });
+        }
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="reading_journal_backup.csv"');
+        res.send(output);
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export data" });
+    }
+  });
+
+  // Import data from CSV
+  app.post("/api/import/csv", async (req, res) => {
+    try {
+      const csvData = req.body.csvData;
+      if (!csvData) {
+        return res.status(400).json({ error: "CSV data is required" });
+      }
+
+      const results = { 
+        books: { created: 0, updated: 0, errors: 0 },
+        sessions: { created: 0, errors: 0 }
+      };
+
+      // Parse CSV
+      parse(csvData, {
+        columns: true,
+        skip_empty_lines: true
+      }, async (err, records) => {
+        if (err) {
+          return res.status(400).json({ error: "Invalid CSV format" });
+        }
+
+        try {
+          const processedBooks = new Map();
+          
+          // Process records
+          for (const record of records as any[]) {
+            const type = record.Type;
+            const bookId = parseInt(record.BookId);
+            
+            // Process book data if not already processed
+            if (!processedBooks.has(bookId)) {
+              try {
+                const bookData = {
+                  title: record.Title,
+                  author: record.Author,
+                  color: record.Color,
+                  coverUrl: record.CoverUrl || null,
+                  totalPages: record.TotalPages ? parseInt(record.TotalPages) : null,
+                  currentPage: record.CurrentPage ? parseInt(record.CurrentPage) : null,
+                  status: record.Status as "reading" | "completed" | "paused",
+                  startDate: record.StartDate || null,
+                  completedDate: record.CompletedDate || null,
+                  notes: record.Notes || null
+                };
+
+                // Check if book already exists
+                const existingBooks = await storage.getBooks();
+                const existingBook = existingBooks.find(b => 
+                  b.title === bookData.title && b.author === bookData.author
+                );
+
+                if (existingBook) {
+                  // Update existing book
+                  await storage.updateBook(existingBook.id, bookData);
+                  processedBooks.set(bookId, existingBook.id);
+                  results.books.updated++;
+                } else {
+                  // Create new book
+                  const newBook = await storage.createBook(bookData);
+                  processedBooks.set(bookId, newBook.id);
+                  results.books.created++;
+                }
+              } catch (error) {
+                console.error('Error processing book:', error);
+                results.books.errors++;
+              }
+            }
+
+            // Process session data if present
+            if (type === 'book_with_session' && record.SessionDate) {
+              try {
+                const realBookId = processedBooks.get(bookId);
+                if (realBookId) {
+                  const sessionData = {
+                    bookId: realBookId,
+                    date: record.SessionDate,
+                    pagesRead: record.PagesRead ? parseInt(record.PagesRead) : null,
+                    duration: record.Duration ? parseInt(record.Duration) : null,
+                    notes: record.SessionNotes || null
+                  };
+
+                  // Check if session already exists
+                  const existingSessions = await storage.getAllReadingSessions();
+                  const existingSession = existingSessions.find(s => 
+                    s.bookId === realBookId && s.date === sessionData.date
+                  );
+
+                  if (!existingSession) {
+                    await storage.createReadingSession(sessionData);
+                    results.sessions.created++;
+                  }
+                }
+              } catch (error) {
+                console.error('Error processing session:', error);
+                results.sessions.errors++;
+              }
+            }
+          }
+
+          res.json({ 
+            message: "Import completed", 
+            results 
+          });
+        } catch (error) {
+          console.error('Import error:', error);
+          res.status(500).json({ error: "Failed to import data" });
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to process import" });
     }
   });
 
