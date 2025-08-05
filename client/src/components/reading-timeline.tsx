@@ -187,31 +187,18 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     const segments = [];
     const totalDays = timelineData.length;
     
-    console.log(`Generating segments for ${book.title}:`, {
-      startDate: book.startDate,
-      completedDate: book.completedDate,
-      status: book.status,
-      totalDays,
-      sessionsInRange: sessions.filter(s => s.bookId === book.id).map(s => s.date)
-    });
-    
     for (let i = 0; i < totalDays; i++) {
       const day = timelineData[i];
       const currentDate = day.date;
       const hasSession = day.sessions.some(session => session.bookId === book.id);
       const width = 100 / totalDays;
       
-      // Check if this date is within the book's active period
-      const isBeforeStart = book.startDate && currentDate < book.startDate;
-      const isAfterCompletion = book.completedDate && currentDate > book.completedDate;
-      const isVisible = !isBeforeStart && !isAfterCompletion;
+      // For timeline visualization, show all sessions regardless of book start/completion dates
+      // Users should see their complete reading history
+      const isVisible = true;
       
       // Special handling for completion date - show checkmark
       const isCompletionDate = book.completedDate && currentDate === book.completedDate;
-      
-      if (hasSession) {
-        console.log(`  ${currentDate}: hasSession=${hasSession}, isVisible=${isVisible}, isBeforeStart=${isBeforeStart}, isAfterCompletion=${isAfterCompletion}`);
-      }
       
       segments.push({
         width: `${width}%`,
