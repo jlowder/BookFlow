@@ -114,6 +114,11 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const currentBooks = books.filter(book => book.status === "reading");
   const completedBooks = books.filter(book => book.status === "completed");
+  
+  // Filter books to only show those with sessions in the current time range
+  const booksWithSessionsInRange = books.filter(book => {
+    return sessions.some(session => session.bookId === book.id);
+  });
 
   // Generate timeline data
   const generateTimelineData = () => {
@@ -333,7 +338,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
         <CardContent className="p-6">
           {/* Book Legend */}
           <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            {books.slice(0, 5).map(book => (
+            {booksWithSessionsInRange.slice(0, 5).map(book => (
               <div key={book.id} className="flex items-center space-x-2">
                 <div 
                   className="w-4 h-4 rounded" 
