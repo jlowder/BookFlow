@@ -144,8 +144,11 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getReadingSessionsInRange(startDate: string, endDate: string): Promise<ReadingSession[]> {
+    console.log(`[SQLiteStorage] Getting sessions in range: ${startDate} to ${endDate}`);
     const stmt = this.db.prepare('SELECT * FROM reading_sessions WHERE date >= ? AND date <= ? ORDER BY date');
-    return stmt.all(startDate, endDate) as ReadingSession[];
+    const sessions = stmt.all(startDate, endDate) as ReadingSession[];
+    console.log(`[SQLiteStorage] Found ${sessions.length} sessions:`, sessions.map(s => `${s.id}: ${s.date}`));
+    return sessions;
   }
 
   async createReadingSession(insertSession: InsertReadingSession): Promise<ReadingSession> {
