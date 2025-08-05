@@ -169,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (startDate && endDate) {
         const sessions = await storage.getReadingSessionsInRange(startDate as string, endDate as string);
+        console.log(`[API] Returning ${sessions.length} sessions for range ${startDate} to ${endDate}:`, sessions.map(s => `${s.id}:${s.date}`));
         return res.json(sessions);
       }
       
