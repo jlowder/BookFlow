@@ -121,7 +121,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     return sessions.some(session => session.bookId === book.id);
   });
   
-  console.log(`Frontend received ${sessions.length} sessions for ${timeRange} days:`, sessions.map(s => `${s.id}:${s.date}`));
+
 
   // Generate timeline data
   const generateTimelineData = () => {
@@ -439,7 +439,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
                 {/* Timeline Ribbons */}
                 <div className="space-y-3">
-                  {books.slice(0, 5).map(book => {
+                  {booksWithSessionsInRange.slice(0, 5).map(book => {
                     const segments = generateRibbonSegments(book);
                     const isCompleted = book.status === "completed";
                     
