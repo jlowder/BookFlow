@@ -381,6 +381,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all data endpoint
+  app.delete("/api/clear-all-data", async (req, res) => {
+    try {
+      // Get current counts before clearing
+      const [books, sessions] = await Promise.all([
+        storage.getBooks(),
+        storage.getAllReadingSessions()
+      ]);
+      
+      const bookCount = books.length;
+      const sessionCount = sessions.length;
+      
+      // Clear all data
+      await storage.clearAllData();
+      
+      res.json({
+        message: "All data cleared successfully",
+        deleted: {
+          books: bookCount,
+          sessions: sessionCount
+        }
+      });
+    } catch (error) {
+      console.error("Error clearing all data:", error);
+      res.status(500).json({ error: "Failed to clear data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

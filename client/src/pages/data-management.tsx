@@ -2,14 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Upload, FileText, Database, BookOpen } from "lucide-react";
+import { Download, Upload, FileText, Database, BookOpen, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function DataManagement() {
   const [importData, setImportData] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const { toast } = useToast();
 
   const handleExport = async () => {
@@ -95,6 +97,32 @@ export default function DataManagement() {
       setImportData(content);
     };
     reader.readAsText(file);
+  };
+
+  const handleClearAllData = async () => {
+    try {
+      setIsClearing(true);
+      const response = await apiRequest("DELETE", "/api/clear-all-data");
+      const result = await response.json() as { message: string; deleted: { books: number; sessions: number } };
+      
+      toast({
+        title: "Data cleared successfully",
+        description: `Deleted ${result.deleted.books} books and ${result.deleted.sessions} reading sessions`,
+      });
+      
+      // Refresh the page to show cleared state
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      toast({
+        title: "Clear failed",
+        description: "Failed to clear all data. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   return (
@@ -237,6 +265,69 @@ export default function DataManagement() {
                     </>
                   )}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Clear All Data Section */}
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="w-5 h-5" />
+                Clear All Data
+              </CardTitle>
+              <CardDescription>
+                Permanently delete all books and reading sessions from your journal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <Trash2 className="w-4 h-4 text-red-600 mt-0.5" />
+                  <div className="text-sm text-red-800">
+                    <p className="font-medium">Warning:</p>
+                    <p className="mt-1">This action cannot be undone. All your books, reading sessions, and progress data will be permanently deleted. Make sure to export your data first if you want to keep a backup.</p>
+                  </div>
+                </div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive"
+                      disabled={isClearing}
+                      className="w-full sm:w-auto"
+                    >
+                      {isClearing ? (
+                        <>
+                          <Database className="w-4 h-4 mr-2 animate-spin" />
+                          Clearing...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Clear All Data
+                        </>
+                      )}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete all your books, reading sessions, and progress data from your reading journal.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearAllData}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Yes, clear all data
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>

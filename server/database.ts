@@ -227,6 +227,20 @@ export class SQLiteStorage implements IStorage {
     return result.count;
   }
 
+  async clearAllData(): Promise<void> {
+    console.log('[SQLiteStorage] Clearing all data...');
+    
+    // Clear all reading sessions first (due to foreign key constraints)
+    const sessionsStmt = this.db.prepare('DELETE FROM reading_sessions');
+    sessionsStmt.run();
+    
+    // Clear all books
+    const booksStmt = this.db.prepare('DELETE FROM books');
+    booksStmt.run();
+    
+    console.log('[SQLiteStorage] All data cleared successfully');
+  }
+
   close() {
     this.db.close();
   }

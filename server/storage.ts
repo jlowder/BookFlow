@@ -21,6 +21,9 @@ export interface IStorage {
   // Statistics
   getReadingStreak(): Promise<number>;
   getTotalBooksRead(): Promise<number>;
+  
+  // Data management
+  clearAllData(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -145,6 +148,13 @@ export class MemStorage implements IStorage {
 
   async getTotalBooksRead(): Promise<number> {
     return Array.from(this.books.values()).filter(book => book.status === "completed").length;
+  }
+
+  async clearAllData(): Promise<void> {
+    this.books.clear();
+    this.readingSessions.clear();
+    this.currentBookId = 1;
+    this.currentSessionId = 1;
   }
 }
 
