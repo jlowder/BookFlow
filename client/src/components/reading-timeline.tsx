@@ -20,6 +20,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   // Force cache invalidation on mount to ensure fresh data
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/books"] });
   }, [queryClient]);
 
   const { data: books = [] } = useQuery<Book[]>({
@@ -117,8 +118,15 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   
   // Filter books to only show those with sessions in the current time range
   const booksWithSessionsInRange = books.filter(book => {
-    return sessions.some(session => session.bookId === book.id);
+    const hasSessionInRange = sessions.some(session => session.bookId === book.id);
+    console.log(`Book ${book.title} (ID: ${book.id}) has session in range (${timeRange} days):`, hasSessionInRange);
+    return hasSessionInRange;
   });
+  
+  console.log(`Timeline for ${timeRange} days from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+  console.log('All books:', books.map(b => `${b.title} (ID: ${b.id})`));
+  console.log('Sessions in range:', sessions.map(s => `Book ${s.bookId} on ${s.date}`));
+  console.log('Books with sessions in range:', booksWithSessionsInRange.map(b => `${b.title} (ID: ${b.id})`));
 
   // Generate timeline data
   const generateTimelineData = () => {
