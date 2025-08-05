@@ -91,6 +91,8 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
       startDate.setDate(endDate.getDate() - days);
     }
     
+    console.log(`Date range for ${timeRange} days: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+    
     return { startDate, endDate };
   };
 
@@ -101,14 +103,17 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
     queryKey: ["/api/reading-sessions", timeRange, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
-    queryFn: () => 
-      fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`, {
+    queryFn: () => {
+      const url = `/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`;
+      console.log(`Fetching sessions for ${timeRange} days: ${url}`);
+      return fetch(url, {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
-      }).then(res => res.json()),
+      }).then(res => res.json());
+    },
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to catch date changes
     staleTime: 0, // Never use stale data - always refetch when date changes
   });
