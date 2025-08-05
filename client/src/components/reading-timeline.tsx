@@ -187,6 +187,14 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     const segments = [];
     const totalDays = timelineData.length;
     
+    console.log(`Generating segments for ${book.title}:`, {
+      startDate: book.startDate,
+      completedDate: book.completedDate,
+      status: book.status,
+      totalDays,
+      sessionsInRange: sessions.filter(s => s.bookId === book.id).map(s => s.date)
+    });
+    
     for (let i = 0; i < totalDays; i++) {
       const day = timelineData[i];
       const currentDate = day.date;
@@ -200,6 +208,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
       
       // Special handling for completion date - show checkmark
       const isCompletionDate = book.completedDate && currentDate === book.completedDate;
+      
+      if (hasSession) {
+        console.log(`  ${currentDate}: hasSession=${hasSession}, isVisible=${isVisible}, isBeforeStart=${isBeforeStart}, isAfterCompletion=${isAfterCompletion}`);
+      }
       
       segments.push({
         width: `${width}%`,
