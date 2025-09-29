@@ -243,17 +243,17 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     while (currentDate <= endDate) {
       const week = new Array(7).fill(null); // Pre-fill array with 7 slots for each day
       
-      // Track month changes for labels - but only for dates within our actual range
-      if (currentDate >= startDate && currentDate.getMonth() !== currentMonth) {
-        currentMonth = currentDate.getMonth();
-        monthLabels.push({
-          month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
-          weekIndex: weekIndex
-        });
-      }
-      
       // Generate 7 days for this week, placing each day in the correct position
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+        // Track month changes for labels - check on each day within our range
+        if (currentDate >= startDate && currentDate <= endDate && currentDate.getMonth() !== currentMonth) {
+          currentMonth = currentDate.getMonth();
+          monthLabels.push({
+            month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+            weekIndex: weekIndex
+          });
+        }
+        
         // Use local date string to avoid timezone issues
         const year = currentDate.getFullYear();
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
