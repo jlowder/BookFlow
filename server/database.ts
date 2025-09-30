@@ -71,7 +71,8 @@ export class SQLiteStorage implements IStorage {
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    const now = new Date().toISOString().split('T')[0];
+    // Use provided startDate if available, otherwise fall back to UTC date
+    const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];
     const stmt = this.db.prepare(`
       INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -85,7 +86,7 @@ export class SQLiteStorage implements IStorage {
       insertBook.totalPages || null,
       insertBook.currentPage || null,
       insertBook.status || 'reading',
-      now,
+      startDate,
       insertBook.notes || null
     );
 

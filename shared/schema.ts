@@ -27,8 +27,9 @@ export const readingSessions = pgTable("reading_sessions", {
 
 export const insertBookSchema = createInsertSchema(books).omit({
   id: true,
-  startDate: true,
   completedDate: true,
+}).extend({
+  startDate: z.string().optional(), // Optional, will be set to current local date if not provided
 });
 
 export const insertReadingSessionSchema = createInsertSchema(readingSessions).omit({

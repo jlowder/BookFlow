@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, BookOpen, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toLocalDateString } from "@/lib/date-utils";
 import type { Book, ReadingSession } from "@shared/schema";
 
 interface BookDetailsModalProps {
@@ -50,7 +51,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(currentDate);
       const session = sessionMap.get(dateStr);
       
       timeline.push({
@@ -118,9 +119,9 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
                 <p className="text-lg text-gray-600 dark:text-gray-300">{book.author}</p>
                 
                 <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(book.status)}>
+                  <Badge className={getStatusColor(book.status || 'reading')}>
                     {book.status === 'completed' && <CheckCircle className="w-3 h-3 mr-1" />}
-                    {book.status.charAt(0).toUpperCase() + book.status.slice(1)}
+                    {(book.status || 'reading').charAt(0).toUpperCase() + (book.status || 'reading').slice(1)}
                   </Badge>
                   
                   {book.totalPages && (

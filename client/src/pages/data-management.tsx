@@ -6,6 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { Download, Upload, FileText, Database, BookOpen, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { toLocalDateString } from "@/lib/date-utils";
 
 export default function DataManagement() {
   const [importData, setImportData] = useState("");
@@ -30,7 +31,7 @@ export default function DataManagement() {
       
       // Create filename with current date
       const today = new Date();
-      const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const dateStr = toLocalDateString(today);
       a.download = `reading_journal_backup_${dateStr}.csv`;
       
       document.body.appendChild(a);

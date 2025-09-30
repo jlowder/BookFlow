@@ -96,6 +96,10 @@ BookFlow is a full-stack reading journal application built with React/TypeScript
 
 ```
 Changelog:
+- September 30, 2025. Fixed critical timezone bug where application advanced to next day at 5PM (GMT-7) - implemented comprehensive local timezone support across entire application
+- September 30, 2025. Created shared toLocalDateString() utility for consistent date formatting in user's local timezone
+- September 30, 2025. Updated all date calculations (timeline queries, cache keys, book creation, CSV export) to use local timezone instead of UTC
+- September 30, 2025. Modified backend to accept optional startDate from frontend, ensuring book creation dates match user's local timezone
 - August 5, 2025. Fixed critical timeline visualization bug - timeline now shows all reading sessions correctly
 - August 5, 2025. Enhanced CSV export with dated filenames for better organization
 - August 5, 2025. Debugged and resolved data flow issues from database to frontend visualization

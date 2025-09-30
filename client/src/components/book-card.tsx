@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Check, CheckCircle, FileText, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { toLocalDateString } from "@/lib/date-utils";
 import BookDetailsModal from "./book-details-modal";
 import type { Book } from "@shared/schema";
 
@@ -25,10 +26,7 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
 
   const markReadMutation = useMutation({
     mutationFn: async () => {
-      // Use local timezone instead of UTC
-      const today = new Date();
-      const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
-      const todayLocal = localDate.toISOString().split('T')[0];
+      const todayLocal = toLocalDateString(new Date());
       
       await apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,

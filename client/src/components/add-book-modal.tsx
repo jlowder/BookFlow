@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { X, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { toLocalDateString } from "@/lib/date-utils";
 import type { GoogleBook } from "@shared/schema";
 
 interface AddBookModalProps {
@@ -84,6 +85,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
       totalPages: selectedBook.volumeInfo.pageCount || 0,
       currentPage: 0,
       status: "reading" as const,
+      startDate: toLocalDateString(new Date()),
     };
 
     addBookMutation.mutate(bookData);

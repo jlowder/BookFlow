@@ -5,20 +5,13 @@ import { Info, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { toLocalDateString } from "@/lib/date-utils";
 import type { Book, ReadingSession } from "@shared/schema";
 
 interface ReadingTimelineProps {
   editModeBookId?: number | null;
   onEditModeToggle?: (bookId: number) => void;
 }
-
-// Helper function to convert Date to YYYY-MM-DD in local timezone
-const toLocalDateString = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: ReadingTimelineProps) {
   const [timeRange, setTimeRange] = useState("30");
@@ -115,11 +108,11 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
       })()
     : startDate;
   
-  // Calculate current timestamp to force fresh queries when date changes
-  const currentTimestamp = Math.floor(Date.now() / (24 * 60 * 60 * 1000)); // Changes daily
+  // Use local date string to force fresh queries when date changes in user's timezone
+  const currentLocalDate = toLocalDateString(new Date());
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate), currentTimestamp],
+    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate), currentLocalDate],
     queryFn: () => {
       const fetchStart = toLocalDateString(fetchStartDate);
       const fetchEnd = toLocalDateString(endDate);

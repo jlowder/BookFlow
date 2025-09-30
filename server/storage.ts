@@ -53,7 +53,8 @@ export class MemStorage implements IStorage {
 
   async createBook(insertBook: InsertBook): Promise<Book> {
     const id = this.currentBookId++;
-    const now = new Date().toISOString().split('T')[0];
+    // Use provided startDate if available, otherwise fall back to UTC date
+    const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];
     const book: Book = { 
       id,
       title: insertBook.title,
@@ -63,7 +64,7 @@ export class MemStorage implements IStorage {
       totalPages: insertBook.totalPages || null,
       currentPage: insertBook.currentPage || null,
       status: insertBook.status || "reading",
-      startDate: now,
+      startDate: startDate,
       completedDate: null,
       notes: insertBook.notes || null
     };
