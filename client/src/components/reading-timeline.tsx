@@ -96,13 +96,24 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const { startDate, endDate } = getDateRange();
   
+  // For grid view, we need to fetch data from the Sunday before the start date
+  // to ensure the first week's padding days have session data
+  const shouldUseGridView = parseInt(timeRange) > 30 || timeRange === "thisyear";
+  const fetchStartDate = shouldUseGridView 
+    ? (() => {
+        const gridStart = new Date(startDate);
+        gridStart.setDate(startDate.getDate() - startDate.getDay()); // Go to Sunday
+        return gridStart;
+      })()
+    : startDate;
+  
   // Calculate current timestamp to force fresh queries when date changes
   const currentTimestamp = Math.floor(Date.now() / (24 * 60 * 60 * 1000)); // Changes daily
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
+    queryKey: ["/api/reading-sessions", timeRange, fetchStartDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
     queryFn: () => 
-      fetch(`/api/reading-sessions?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`, {
+      fetch(`/api/reading-sessions?startDate=${fetchStartDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`, {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',
@@ -126,7 +137,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   // Generate timeline data
   const generateTimelineData = () => {
     const timeline = [];
-    const current = new Date(startDate);
+    // For grid view, start from fetchStartDate to include padding days
+    // For ribbon view, use the regular startDate
+    const timelineStart = shouldUseGridView ? fetchStartDate : startDate;
+    const current = new Date(timelineStart);
     
     while (current <= endDate) {
       const dateStr = current.toISOString().split('T')[0];
@@ -316,7 +330,6 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   };
 
   const gridData = generateGridData();
-  const shouldUseGridView = parseInt(timeRange) > 30 || timeRange === "thisyear";
 
   return (
     <section className="mb-12">
