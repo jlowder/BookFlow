@@ -112,14 +112,18 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
     queryKey: ["/api/reading-sessions", timeRange, fetchStartDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
-    queryFn: () => 
-      fetch(`/api/reading-sessions?startDate=${fetchStartDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`, {
+    queryFn: () => {
+      const fetchStart = fetchStartDate.toISOString().split('T')[0];
+      const fetchEnd = endDate.toISOString().split('T')[0];
+      console.log(`[Timeline] Fetching sessions: timeRange=${timeRange}, startDate=${fetchStart}, endDate=${fetchEnd}, shouldUseGridView=${shouldUseGridView}`);
+      return fetch(`/api/reading-sessions?startDate=${fetchStart}&endDate=${fetchEnd}`, {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
         }
-      }).then(res => res.json()),
+      }).then(res => res.json());
+    },
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to catch date changes
     staleTime: 0, // Never use stale data - always refetch when date changes
   });
@@ -244,6 +248,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     timelineData.forEach(day => {
       dayMap.set(day.date, day);
     });
+    console.log('[Timeline] dayMap has', dayMap.size, 'entries. First few dates:', Array.from(dayMap.keys()).slice(0, 5));
     
     // Find the Sunday before our start date
     const gridStartDate = new Date(startDate);
@@ -276,6 +281,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
         
         const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayData = dayMap.get(dateStr);
+        
+        if (dateStr.startsWith('2025-06-29') || dateStr.startsWith('2025-06-30')) {
+          console.log(`[Timeline] Looking up ${dateStr}: found=${!!dayData}, hasData=${dayData ? dayData.sessions.length : 0} sessions`);
+        }
         
         if (dayData) {
           // Get unique books for this day (avoid duplicates from multiple sessions)
