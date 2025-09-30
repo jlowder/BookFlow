@@ -12,6 +12,14 @@ interface ReadingTimelineProps {
   onEditModeToggle?: (bookId: number) => void;
 }
 
+// Helper function to convert Date to YYYY-MM-DD in local timezone
+const toLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: ReadingTimelineProps) {
   const [timeRange, setTimeRange] = useState("30");
   const { toast } = useToast();
@@ -111,10 +119,10 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
   const currentTimestamp = Math.floor(Date.now() / (24 * 60 * 60 * 1000)); // Changes daily
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, fetchStartDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0], currentTimestamp],
+    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate), currentTimestamp],
     queryFn: () => {
-      const fetchStart = fetchStartDate.toISOString().split('T')[0];
-      const fetchEnd = endDate.toISOString().split('T')[0];
+      const fetchStart = toLocalDateString(fetchStartDate);
+      const fetchEnd = toLocalDateString(endDate);
       console.log(`[Timeline] Fetching sessions: timeRange=${timeRange}, startDate=${fetchStart}, endDate=${fetchEnd}, shouldUseGridView=${shouldUseGridView}`);
       return fetch(`/api/reading-sessions?startDate=${fetchStart}&endDate=${fetchEnd}`, {
         cache: 'no-cache',
@@ -147,7 +155,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     const current = new Date(timelineStart);
     
     while (current <= endDate) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(current);
       const daySessions = sessions.filter(session => session.date === dateStr);
       
       timeline.push({
