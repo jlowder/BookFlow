@@ -359,7 +359,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
         <CardContent className="p-6">
           {/* Book Legend */}
           <div className="flex flex-wrap items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            {booksWithSessionsInRange.slice(0, 5).map(book => (
+            {booksWithSessionsInRange.map(book => (
               <div key={book.id} className="flex items-center space-x-2">
                 <div 
                   className="w-4 h-4 rounded" 
@@ -457,7 +457,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
                 {/* Timeline Ribbons */}
                 <div className="space-y-3">
-                  {booksWithSessionsInRange.slice(0, 5).map(book => {
+                  {booksWithSessionsInRange.map(book => {
                     const segments = generateRibbonSegments(book);
                     const isCompleted = book.status === "completed";
                     
