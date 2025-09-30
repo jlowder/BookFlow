@@ -240,8 +240,8 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     // Parse dates without timezone issues
     const startDateStr = timelineData[0].date;
     const endDateStr = timelineData[timelineData.length - 1].date;
-    const startDate = new Date(startDateStr + 'T00:00:00');
-    const endDate = new Date(endDateStr + 'T00:00:00');
+    const gridDataStartDate = new Date(startDateStr + 'T00:00:00');
+    const gridDataEndDate = new Date(endDateStr + 'T00:00:00');
     
     // Create a map for quick lookup of timeline data
     const dayMap = new Map();
@@ -251,21 +251,21 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     console.log('[Timeline] dayMap has', dayMap.size, 'entries. First few dates:', Array.from(dayMap.keys()).slice(0, 5));
     
     // Find the Sunday before our start date
-    const gridStartDate = new Date(startDate);
-    gridStartDate.setDate(startDate.getDate() - startDate.getDay());
+    const gridStartDate = new Date(gridDataStartDate);
+    gridStartDate.setDate(gridDataStartDate.getDate() - gridDataStartDate.getDay());
     
     // Generate weeks
     let currentDate = new Date(gridStartDate);
     let currentMonth = -1; // Initialize to -1 to ensure first month is captured
     let weekIndex = 0;
     
-    while (currentDate <= endDate) {
+    while (currentDate <= gridDataEndDate) {
       const week = new Array(7).fill(null); // Pre-fill array with 7 slots for each day
       
       // Generate 7 days for this week, placing each day in the correct position
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         // Track month changes for labels - check on each day within our range
-        if (currentDate >= startDate && currentDate <= endDate && currentDate.getMonth() !== currentMonth) {
+        if (currentDate >= gridDataStartDate && currentDate <= gridDataEndDate && currentDate.getMonth() !== currentMonth) {
           currentMonth = currentDate.getMonth();
           monthLabels.push({
             month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
@@ -281,10 +281,6 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
         
         const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
         const dayData = dayMap.get(dateStr);
-        
-        if (dateStr.startsWith('2025-06-29') || dateStr.startsWith('2025-06-30')) {
-          console.log(`[Timeline] Looking up ${dateStr}: found=${!!dayData}, hasData=${dayData ? dayData.sessions.length : 0} sessions`);
-        }
         
         if (dayData) {
           // Get unique books for this day (avoid duplicates from multiple sessions)
@@ -305,7 +301,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
           };
         } else {
           // Day outside our range or no data
-          const isInRange = currentDate >= startDate && currentDate <= endDate;
+          const isInRange = currentDate >= gridDataStartDate && currentDate <= gridDataEndDate;
           week[actualDayOfWeek] = {
             date: isInRange ? dateStr : '',
             isEmpty: !isInRange,
