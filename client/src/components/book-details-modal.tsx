@@ -95,7 +95,9 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/books'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/completed"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions", "all"] });
     },
   });
