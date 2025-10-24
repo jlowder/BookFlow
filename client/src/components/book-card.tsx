@@ -148,7 +148,7 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
             </span>
           </div>
           
-          {status === 'reading' && (
+          {status === 'reading' ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Button
@@ -209,6 +209,14 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
                   <CheckCircle className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              {book.startDate && book.completedDate && (
+                <p>
+                  {new Date(book.startDate).toLocaleDateString()} - {new Date(book.completedDate).toLocaleDateString()}
+                </p>
+              )}
             </div>
           )}
         </div>
