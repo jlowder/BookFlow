@@ -80,6 +80,7 @@ export default function Home() {
               <Button 
                 onClick={() => setIsAddBookModalOpen(true)}
                 className="bg-accent-blue hover:bg-blue-600 text-white flex items-center space-x-2"
+                data-testid="add-book-button"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add Book</span>

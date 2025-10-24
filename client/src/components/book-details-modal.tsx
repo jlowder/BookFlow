@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, FileText, BookOpen, CheckCircle } from "lucide-react";
+import { Calendar, FileText, BookOpen, CheckCircle, Palette } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toLocalDateString } from "@/lib/date-utils";
 import type { Book, ReadingSession } from "@shared/schema";
@@ -78,7 +78,33 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
     }
   };
 
+  const queryClient = useQueryClient();
 
+  const updateBookColor = useMutation({
+    mutationFn: async (newColor: string) => {
+      const response = await fetch(`/api/books/${book.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ color: newColor }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update book color');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/completed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions", "all"] });
+    },
+  });
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateBookColor.mutate(e.target.value);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -115,7 +141,19 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
               </div>
               
               <div className="flex-1 space-y-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{book.title}</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{book.title}</h2>
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={book.color}
+                      onChange={handleColorChange}
+                      className="w-8 h-8 p-1 border-2 border-gray-300 rounded-full cursor-pointer appearance-none"
+                      style={{ backgroundColor: book.color }}
+                    />
+                    <Palette className="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white pointer-events-none" />
+                  </div>
+                </div>
                 <p className="text-lg text-gray-600 dark:text-gray-300">{book.author}</p>
                 
                 <div className="flex items-center gap-2">
@@ -181,11 +219,12 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
                       {timelineData.map((day, index) => (
                         <div
                           key={day.date}
-                          className={`w-3 h-3 rounded-sm ${
-                            day.hasSession 
-                              ? 'bg-green-500' 
-                              : 'bg-gray-200 dark:bg-gray-600'
-                          }`}
+                          className="w-3 h-3 rounded-sm"
+                          style={{
+                            backgroundColor: day.hasSession
+                              ? book.color
+                              : 'var(--gray-200)',
+                          }}
                           title={`${day.displayDate}${day.hasSession ? ' - Read' : ' - No reading'}`}
                         />
                       ))}
