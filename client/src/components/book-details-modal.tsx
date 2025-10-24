@@ -34,37 +34,42 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
 
   // Generate timeline visualization for this book
   const generateBookTimeline = () => {
-    if (bookSessions.length === 0) return [];
+    try {
+      if (bookSessions.length === 0) return [];
 
-    const sortedSessions = [...bookSessions].sort((a, b) => a.date.localeCompare(b.date));
-    const startDate = new Date(sortedSessions[0].date + 'T00:00:00');
-    const endDate = new Date(sortedSessions[sortedSessions.length - 1].date + 'T00:00:00');
+      const sortedSessions = [...bookSessions].sort((a, b) => a.date.localeCompare(b.date));
+      const startDate = new Date(sortedSessions[0].date + 'T00:00:00');
+      const endDate = new Date(sortedSessions[sortedSessions.length - 1].date + 'T00:00:00');
 
-    // Create session map for quick lookup
-    const sessionMap = new Map();
-    sortedSessions.forEach(session => {
-      sessionMap.set(session.date, session);
-    });
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return [];
 
-    // Generate timeline data
-    const timeline = [];
-    const currentDate = new Date(startDate);
-    
-    while (currentDate <= endDate) {
-      const dateStr = toLocalDateString(currentDate);
-      const session = sessionMap.get(dateStr);
-      
-      timeline.push({
-        date: dateStr,
-        hasSession: !!session,
-        session: session || null,
-        displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const sessionMap = new Map();
+      sortedSessions.forEach(session => {
+        sessionMap.set(session.date, session);
       });
-      
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
 
-    return timeline;
+      const timeline = [];
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = toLocalDateString(currentDate);
+        const session = sessionMap.get(dateStr);
+
+        timeline.push({
+          date: dateStr,
+          hasSession: !!session,
+          session: session || null,
+          displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return timeline;
+    } catch (error) {
+      console.error("Error generating book timeline:", error);
+      return [];
+    }
   };
 
   const timelineData = generateBookTimeline();
@@ -170,10 +175,10 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  {book.startDate && (
+                  {book.startDate && !isNaN(new Date(book.startDate).getTime()) && (
                     <span>Started: {new Date(book.startDate + 'T00:00:00').toLocaleDateString()}</span>
                   )}
-                  {book.completedDate && (
+                  {book.completedDate && !isNaN(new Date(book.completedDate).getTime()) && (
                     <span>Completed: {new Date(book.completedDate + 'T00:00:00').toLocaleDateString()}</span>
                   )}
                 </div>
