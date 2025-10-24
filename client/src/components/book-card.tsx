@@ -7,19 +7,19 @@ import { Check, CheckCircle, FileText, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { toLocalDateString } from "@/lib/date-utils";
-import BookDetailsModal from "./book-details-modal";
 import type { Book } from "@shared/schema";
 
 interface BookCardProps {
   book: Book;
   isEditMode?: boolean;
   onEditModeToggle?: (bookId: number) => void;
+  onClick?: (book: Book) => void;
+  status: "reading" | "completed";
 }
 
-export default function BookCard({ book, isEditMode = false, onEditModeToggle }: BookCardProps) {
+export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status }: BookCardProps) {
   const [isMarked, setIsMarked] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -122,13 +122,16 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
   }));
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 cursor-pointer"
+      onClick={() => onClick && onClick(book)}
+      role="article"
+    >
       <div className="flex space-x-4">
         <img 
           src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=450"} 
           alt={book.title}
-          className="w-16 h-24 object-cover rounded-lg shadow-sm flex-shrink-0 cursor-pointer hover:shadow-md transition-shadow duration-200" 
-          onClick={() => setIsDetailsOpen(true)}
+          className="w-16 h-24 object-cover rounded-lg shadow-sm flex-shrink-0"
         />
         
         <div className="flex-1 min-w-0">
@@ -145,67 +148,77 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
             </span>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => markReadMutation.mutate()}
-                disabled={markReadMutation.isPending || isMarked}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 hover:bg-gray-200 bg-[#dcfce7]"
-              >
-                <Check className="w-3 h-3 mr-1" />
-                {isMarked ? 'Recorded!' : 'Read Today'}
-              </Button>
-              
-              <div className="flex space-x-1">
-                {recentPattern.map((day, i) => (
-                  <div 
-                    key={i}
-                    className="w-2 h-2 rounded-full"
-                    style={{ 
-                      backgroundColor: book.color,
-                      opacity: day.read ? day.opacity : 0.3
-                    }}
-                  ></div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setIsNotesOpen(true)}
-                className="h-8 w-8 rounded-md p-0 bg-[#e5e7eb] hover:bg-gray-300 border-gray-300 text-gray-700"
-              >
-                <FileText className="w-4 h-4" />
-              </Button>
-              {onEditModeToggle && (
+          {status === 'reading' ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onEditModeToggle(book.id)}
-                  className={`h-8 w-8 rounded-md p-0 border-gray-300 text-gray-700 ${
-                    isEditMode 
-                      ? 'bg-blue-100 hover:bg-blue-200 border-blue-300' 
-                      : 'bg-[#e5e7eb] hover:bg-gray-300'
-                  }`}
+                  onClick={(e) => { e.stopPropagation(); markReadMutation.mutate(); }}
+                  disabled={markReadMutation.isPending || isMarked}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 hover:bg-gray-200 bg-[#dcfce7]"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Check className="w-3 h-3 mr-1" />
+                  {isMarked ? 'Recorded!' : 'Read Today'}
                 </Button>
-              )}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => markCompleteMutation.mutate()}
-                disabled={markCompleteMutation.isPending}
-                className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-green-100 border-green-200 text-green-700 p-0 bg-[#e5e7eb]"
-              >
-                <CheckCircle className="w-4 h-4" />
-              </Button>
+
+                <div className="flex space-x-1">
+                  {recentPattern.map((day, i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        backgroundColor: book.color,
+                        opacity: day.read ? day.opacity : 0.3
+                      }}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => { e.stopPropagation(); setIsNotesOpen(true); }}
+                  className="h-8 w-8 rounded-md p-0 bg-[#e5e7eb] hover:bg-gray-300 border-gray-300 text-gray-700"
+                >
+                  <FileText className="w-4 h-4" />
+                </Button>
+                {onEditModeToggle && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => { e.stopPropagation(); onEditModeToggle(book.id); }}
+                    className={`h-8 w-8 rounded-md p-0 border-gray-300 text-gray-700 ${
+                      isEditMode
+                        ? 'bg-blue-100 hover:bg-blue-200 border-blue-300'
+                        : 'bg-[#e5e7eb] hover:bg-gray-300'
+                    }`}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => { e.stopPropagation(); markCompleteMutation.mutate(); }}
+                  disabled={markCompleteMutation.isPending}
+                  className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-green-100 border-green-200 text-green-700 p-0 bg-[#e5e7eb]"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              {book.startDate && book.completedDate && (
+                <p>
+                  {new Date(book.startDate).toLocaleDateString()} - {new Date(book.completedDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {/* Notes Dialog */}
@@ -244,13 +257,6 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle }:
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Book Details Modal */}
-      <BookDetailsModal 
-        book={book}
-        isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-      />
     </div>
   );
 }

@@ -12,7 +12,7 @@ interface BookDetailsModalProps {
   onClose: () => void;
 }
 
-export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProps) {
+function BookDetails({ book }: { book: Book }) {
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
     queryKey: ["/api/reading-sessions", "all"],
     queryFn: async () => {
@@ -25,46 +25,48 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
       }
       return response.json();
     },
-    enabled: isOpen && !!book,
+    enabled: !!book,
   });
-
-  if (!book) return null;
 
   const bookSessions = sessions.filter(session => session.bookId === book.id);
 
-  // Generate timeline visualization for this book
   const generateBookTimeline = () => {
-    if (bookSessions.length === 0) return [];
+    try {
+      if (bookSessions.length === 0) return [];
 
-    const sortedSessions = [...bookSessions].sort((a, b) => a.date.localeCompare(b.date));
-    const startDate = new Date(sortedSessions[0].date + 'T00:00:00');
-    const endDate = new Date(sortedSessions[sortedSessions.length - 1].date + 'T00:00:00');
+      const sortedSessions = [...bookSessions].sort((a, b) => a.date.localeCompare(b.date));
+      const startDate = new Date(sortedSessions[0].date + 'T00:00:00');
+      const endDate = new Date(sortedSessions[sortedSessions.length - 1].date + 'T00:00:00');
 
-    // Create session map for quick lookup
-    const sessionMap = new Map();
-    sortedSessions.forEach(session => {
-      sessionMap.set(session.date, session);
-    });
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return [];
 
-    // Generate timeline data
-    const timeline = [];
-    const currentDate = new Date(startDate);
-    
-    while (currentDate <= endDate) {
-      const dateStr = toLocalDateString(currentDate);
-      const session = sessionMap.get(dateStr);
-      
-      timeline.push({
-        date: dateStr,
-        hasSession: !!session,
-        session: session || null,
-        displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const sessionMap = new Map();
+      sortedSessions.forEach(session => {
+        sessionMap.set(session.date, session);
       });
-      
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
 
-    return timeline;
+      const timeline = [];
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = toLocalDateString(currentDate);
+        const session = sessionMap.get(dateStr);
+
+        timeline.push({
+          date: dateStr,
+          hasSession: !!session,
+          session: session || null,
+          displayDate: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return timeline;
+    } catch (error) {
+      console.error("Error generating book timeline:", error);
+      return [];
+    }
   };
 
   const timelineData = generateBookTimeline();
@@ -107,6 +109,134 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
   };
 
   return (
+    <ScrollArea className="max-h-[calc(90vh-8rem)]">
+      <div className="space-y-6">
+        {/* Book Header */}
+        <div className="flex gap-4">
+          <div className="flex-shrink-0">
+            {book.coverUrl ? (
+              <img
+                src={book.coverUrl}
+                alt={book.title}
+                className="w-24 h-32 object-cover rounded-lg shadow-md"
+              />
+            ) : (
+              <div
+                className="w-24 h-32 rounded-lg shadow-md flex items-center justify-center text-white text-xs font-medium"
+                style={{ backgroundColor: book.color }}
+              >
+                {book.title.substring(0, 2)}
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{book.title}</h2>
+              <div className="relative">
+                <input
+                  type="color"
+                  value={book.color}
+                  onChange={handleColorChange}
+                  className="w-8 h-8 p-1 border-2 border-gray-300 rounded-full cursor-pointer appearance-none"
+                  style={{ backgroundColor: book.color }}
+                />
+                <Palette className="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white pointer-events-none" />
+              </div>
+            </div>
+            <p className="text-lg text-gray-600 dark:text-gray-300">{book.author}</p>
+
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusColor(book.status || 'reading')}>
+                {book.status === 'completed' && <CheckCircle className="w-3 h-3 mr-1" />}
+                {(book.status || 'reading').charAt(0).toUpperCase() + (book.status || 'reading').slice(1)}
+              </Badge>
+
+              {book.totalPages && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {book.totalPages} pages
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+              {book.startDate && !isNaN(new Date(book.startDate).getTime()) && (
+                <span>Started: {new Date(book.startDate + 'T00:00:00').toLocaleDateString()}</span>
+              )}
+              {book.completedDate && !isNaN(new Date(book.completedDate).getTime()) && (
+                <span>Completed: {new Date(book.completedDate + 'T00:00:00').toLocaleDateString()}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Reading Statistics */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Calendar className="w-4 h-4" />
+              Days Active
+            </div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{bookSessions.length}</div>
+          </div>
+        </div>
+
+        {/* Notes */}
+        {book.notes && (
+          <div className="space-y-3">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+              <FileText className="w-5 h-5" />
+              Notes
+            </h3>
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{book.notes}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Reading Timeline */}
+        {timelineData.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+              <Calendar className="w-5 h-5" />
+              Reading Timeline
+            </h3>
+
+            <div className="space-y-4">
+              {/* Timeline Visualization */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="flex items-center gap-1 mb-2">
+                  {timelineData.map((day, index) => (
+                    <div
+                      key={day.date}
+                      className="w-3 h-3 rounded-sm"
+                      style={{
+                        backgroundColor: day.hasSession
+                          ? book.color
+                          : 'var(--gray-200)',
+                      }}
+                      title={`${day.displayDate}${day.hasSession ? ' - Read' : ' - No reading'}`}
+                    />
+                  ))}
+                </div>
+                
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>{timelineData[0]?.displayDate}</span>
+                  <span>{timelineData[timelineData.length - 1]?.displayDate}</span>
+                </div>
+              </div>
+
+
+            </div>
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+}
+
+export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProps) {
+  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
@@ -118,130 +248,7 @@ export default function BookDetailsModal({ book, isOpen, onClose }: BookDetailsM
             View detailed information, reading history, and notes for this book.
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="max-h-[calc(90vh-8rem)]">
-          <div className="space-y-6">
-            {/* Book Header */}
-            <div className="flex gap-4">
-              <div className="flex-shrink-0">
-                {book.coverUrl ? (
-                  <img 
-                    src={book.coverUrl} 
-                    alt={book.title}
-                    className="w-24 h-32 object-cover rounded-lg shadow-md"
-                  />
-                ) : (
-                  <div 
-                    className="w-24 h-32 rounded-lg shadow-md flex items-center justify-center text-white text-xs font-medium"
-                    style={{ backgroundColor: book.color }}
-                  >
-                    {book.title.substring(0, 2)}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{book.title}</h2>
-                  <div className="relative">
-                    <input
-                      type="color"
-                      value={book.color}
-                      onChange={handleColorChange}
-                      className="w-8 h-8 p-1 border-2 border-gray-300 rounded-full cursor-pointer appearance-none"
-                      style={{ backgroundColor: book.color }}
-                    />
-                    <Palette className="w-4 h-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white pointer-events-none" />
-                  </div>
-                </div>
-                <p className="text-lg text-gray-600 dark:text-gray-300">{book.author}</p>
-                
-                <div className="flex items-center gap-2">
-                  <Badge className={getStatusColor(book.status || 'reading')}>
-                    {book.status === 'completed' && <CheckCircle className="w-3 h-3 mr-1" />}
-                    {(book.status || 'reading').charAt(0).toUpperCase() + (book.status || 'reading').slice(1)}
-                  </Badge>
-                  
-                  {book.totalPages && (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {book.totalPages} pages
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  {book.startDate && (
-                    <span>Started: {new Date(book.startDate + 'T00:00:00').toLocaleDateString()}</span>
-                  )}
-                  {book.completedDate && (
-                    <span>Completed: {new Date(book.completedDate + 'T00:00:00').toLocaleDateString()}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Reading Statistics */}
-            <div className="grid grid-cols-1 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Calendar className="w-4 h-4" />
-                  Days Active
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">{bookSessions.length}</div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {book.notes && (
-              <div className="space-y-3">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  <FileText className="w-5 h-5" />
-                  Notes
-                </h3>
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{book.notes}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Reading Timeline */}
-            {timelineData.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                  <Calendar className="w-5 h-5" />
-                  Reading Timeline
-                </h3>
-                
-                <div className="space-y-4">
-                  {/* Timeline Visualization */}
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <div className="flex items-center gap-1 mb-2">
-                      {timelineData.map((day, index) => (
-                        <div
-                          key={day.date}
-                          className="w-3 h-3 rounded-sm"
-                          style={{
-                            backgroundColor: day.hasSession
-                              ? book.color
-                              : 'var(--gray-200)',
-                          }}
-                          title={`${day.displayDate}${day.hasSession ? ' - Read' : ' - No reading'}`}
-                        />
-                      ))}
-                    </div>
-                    
-                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>{timelineData[0]?.displayDate}</span>
-                      <span>{timelineData[timelineData.length - 1]?.displayDate}</span>
-                    </div>
-                  </div>
-
-
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+        {book && <BookDetails book={book} />}
       </DialogContent>
     </Dialog>
   );
