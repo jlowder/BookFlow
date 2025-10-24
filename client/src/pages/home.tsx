@@ -122,6 +122,8 @@ export default function Home() {
                   book={book} 
                   isEditMode={editModeBookId === book.id}
                   onEditModeToggle={handleEditModeToggle}
+                  onClick={handleBookClick}
+                  status="reading"
                 />
               ))}
             </div>
@@ -155,17 +157,14 @@ export default function Home() {
           </div>
           
           {completedBooks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {completedBooks.map((book: Book) => (
-                <div key={book.id} className="group cursor-pointer" onClick={() => handleBookClick(book)}>
-                  <img 
-                    src={book.coverUrl || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=450"} 
-                    alt={book.title}
-                    className="w-full h-32 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-200" 
-                  />
-                  <p className="text-xs text-gray-700 dark:text-gray-300 mt-2 truncate font-medium">{book.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{book.author}</p>
-                </div>
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onClick={handleBookClick}
+                  status="completed"
+                />
               ))}
             </div>
           ) : (
