@@ -337,6 +337,19 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
 
   const gridData = generateGridData();
 
+  // Process month labels to prevent overlap
+  const processedMonthLabels: { month: string; weekIndex: number; left: number }[] = [];
+  if (gridData.monthLabels) {
+    let lastLeft = -Infinity;
+    const LABEL_SPACING = 30; // Spacing between month labels in pixels
+    gridData.monthLabels.forEach(label => {
+      const idealLeft = label.weekIndex * 16;
+      const newLeft = Math.max(idealLeft, lastLeft + LABEL_SPACING);
+      processedMonthLabels.push({ ...label, left: newLeft });
+      lastLeft = newLeft;
+    });
+  }
+
   return (
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -380,14 +393,14 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
                 {/* Month Labels */}
                 <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
                   <div className="w-8"></div>
-                  <div className="flex">
-                    {gridData.monthLabels?.map((label, i) => (
+                  <div className="relative flex-1">
+                    {processedMonthLabels.map((label, i) => (
                       <div 
                         key={i} 
                         className="text-xs text-gray-600 dark:text-gray-400"
                         style={{ 
                           position: 'absolute',
-                          left: `${32 + (label.weekIndex * 16)}px`
+                          left: `${label.left}px`
                         }}
                       >
                         {label.month}
