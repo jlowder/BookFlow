@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,17 @@ export default function Home() {
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState("");
+
+  useEffect(() => {
+    const date = new Date();
+    setCurrentDate(date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }));
+  }, []);
 
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
@@ -52,6 +63,9 @@ export default function Home() {
                 <BookOpen className="text-white w-4 h-4" />
               </div>
               <h1 className="text-xl font-bold text-primary">BookFlow</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+               <p className="text-sm text-gray-600">{currentDate}</p>
             </div>
             
             <div className="flex items-center space-x-4">
