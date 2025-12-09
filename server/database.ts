@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { join } from 'path';
 import type { Book, InsertBook, ReadingSession, InsertReadingSession } from "@shared/schema";
 import type { IStorage } from './storage';
+import { toLocalDateString, parseLocalDate } from "./date-utils";
 
 export class SQLiteStorage implements IStorage {
   private db: Database.Database;
@@ -198,30 +199,37 @@ export class SQLiteStorage implements IStorage {
 
   async getReadingStreak(): Promise<number> {
     const stmt = this.db.prepare('SELECT DISTINCT date FROM reading_sessions ORDER BY date DESC');
-    const dates = stmt.all() as { date: string }[];
-    
+    const results = stmt.all() as { date: string }[];
+    const dates = new Set(results.map(r => r.date));
+
+    if (dates.size === 0) {
+      return 0;
+    }
+
     let streak = 0;
-    // Use UTC date for consistency with database storage
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateString(new Date());
+    
+    // Check if the streak starts today or yesterday
     let currentDate = today;
-    
-    console.log(`[SQLiteStorage] Calculating streak. Today: ${today}, Available dates:`, dates.map(d => d.date));
-    
-    for (const { date } of dates) {
-      if (date === currentDate) {
-        streak++;
-        console.log(`[SQLiteStorage] Found reading session for ${date}, streak now: ${streak}`);
-        // Calculate previous date
-        const prevDate = new Date(currentDate + 'T00:00:00');
-        prevDate.setDate(prevDate.getDate() - 1);
-        currentDate = prevDate.toISOString().split('T')[0];
-      } else {
-        console.log(`[SQLiteStorage] No reading session for ${currentDate}, breaking streak at ${streak}`);
-        break;
+    if (!dates.has(currentDate)) {
+      const yesterday = parseLocalDate(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      currentDate = toLocalDateString(yesterday);
+
+      // If no reading yesterday either, streak is 0
+      if (!dates.has(currentDate)) {
+        return 0;
       }
     }
     
-    console.log(`[SQLiteStorage] Final streak: ${streak}`);
+    // Loop backwards from the current date to calculate the streak
+    while (dates.has(currentDate)) {
+      streak++;
+      const prevDate = parseLocalDate(currentDate);
+      prevDate.setDate(prevDate.getDate() - 1);
+      currentDate = toLocalDateString(prevDate);
+    }
+
     return streak;
   }
 
