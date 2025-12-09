@@ -11,10 +11,20 @@ import type { Book, ReadingSession } from "@shared/schema";
 interface ReadingTimelineProps {
   editModeBookId?: number | null;
   onEditModeToggle?: (bookId: number) => void;
+  timeRange: string;
+  onTimeRangeChange: (value: string) => void;
+  startDate: Date;
+  endDate: Date;
 }
 
-export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: ReadingTimelineProps) {
-  const [timeRange, setTimeRange] = useState("30");
+export default function ReadingTimeline({
+  editModeBookId,
+  onEditModeToggle,
+  timeRange,
+  onTimeRangeChange,
+  startDate,
+  endDate
+}: ReadingTimelineProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -79,24 +89,6 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     });
   };
 
-  const getDateRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    
-    if (timeRange === "thisyear") {
-      // This year - from January 1st to today
-      startDate.setFullYear(endDate.getFullYear(), 0, 1);
-    } else {
-      // All other options go back by number of days
-      const days = parseInt(timeRange);
-      startDate.setDate(endDate.getDate() - days);
-    }
-    
-    return { startDate, endDate };
-  };
-
-  const { startDate, endDate } = getDateRange();
-  
   // For grid view, we need to fetch data from the Sunday before the start date
   // to ensure the first week's padding days have session data
   const shouldUseGridView = parseInt(timeRange) > 30 || timeRange === "thisyear";
@@ -354,7 +346,7 @@ export default function ReadingTimeline({ editModeBookId, onEditModeToggle }: Re
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-primary">Reading Timeline</h2>
-        <Select value={timeRange} onValueChange={setTimeRange}>
+        <Select value={timeRange} onValueChange={onTimeRangeChange}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>

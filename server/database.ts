@@ -71,6 +71,11 @@ export class SQLiteStorage implements IStorage {
     return stmt.all(status) as Book[];
   }
 
+  async getCompletedBooksInRange(startDate: string, endDate: string): Promise<Book[]> {
+    const stmt = this.db.prepare('SELECT * FROM books WHERE status = ? AND completedDate >= ? AND completedDate <= ? ORDER BY completedDate DESC');
+    return stmt.all('completed', startDate, endDate) as Book[];
+  }
+
   async createBook(insertBook: InsertBook): Promise<Book> {
     // Use provided startDate if available, otherwise fall back to UTC date
     const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];

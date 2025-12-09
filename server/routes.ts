@@ -58,6 +58,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!["reading", "completed", "paused"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
       }
+      const { startDate, endDate } = req.query;
+      if (status === 'completed' && startDate && endDate) {
+        const books = await storage.getCompletedBooksInRange(startDate as string, endDate as string);
+        return res.json(books);
+      }
       const books = await storage.getBooksByStatus(status);
       res.json(books);
     } catch (error) {
