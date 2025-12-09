@@ -8,6 +8,7 @@ import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
 import BookDetailsModal from "@/components/book-details-modal";
+import { toLocalDateString } from "@/lib/date-utils";
 
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
@@ -15,6 +16,23 @@ export default function Home() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
+  const [timeRange, setTimeRange] = useState("30");
+
+  const getDateRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+
+    if (timeRange === "thisyear") {
+      startDate.setFullYear(endDate.getFullYear(), 0, 1);
+    } else {
+      const days = parseInt(timeRange);
+      startDate.setDate(endDate.getDate() - days);
+    }
+
+    return { startDate, endDate };
+  };
+
+  const { startDate, endDate } = getDateRange();
 
   useEffect(() => {
     const date = new Date();
@@ -31,7 +49,12 @@ export default function Home() {
   });
 
   const { data: completedBooks = [] } = useQuery<Book[]>({
-    queryKey: ["/api/books/status/completed"],
+    queryKey: ["/api/books/status/completed", toLocalDateString(startDate), toLocalDateString(endDate)],
+    queryFn: () => {
+      const start = toLocalDateString(startDate);
+      const end = toLocalDateString(endDate);
+      return fetch(`/api/books/status/completed?startDate=${start}&endDate=${end}`).then(res => res.json());
+    }
   });
 
   const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
@@ -161,13 +184,19 @@ export default function Home() {
         <ReadingTimeline 
           editModeBookId={editModeBookId}
           onEditModeToggle={handleEditModeToggle}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          startDate={startDate}
+          endDate={endDate}
         />
 
         {/* Completed Books */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-primary">Completed Books</h2>
-            <span className="text-sm text-secondary">{completedBooks.length} books completed</span>
+            <Link href="/archive">
+              <Button variant="outline" size="sm">View All</Button>
+            </Link>
           </div>
           
           {completedBooks.length > 0 ? (

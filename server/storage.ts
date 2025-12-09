@@ -7,6 +7,7 @@ export interface IStorage {
   getBooks(): Promise<Book[]>;
   getBook(id: number): Promise<Book | undefined>;
   getBooksByStatus(status: "reading" | "completed" | "paused"): Promise<Book[]>;
+  getCompletedBooksInRange: (startDate: string, endDate: string) => Promise<Book[]>;
   createBook(book: InsertBook): Promise<Book>;
   updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined>;
   deleteBook(id: number): Promise<boolean>;
