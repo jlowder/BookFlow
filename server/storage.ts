@@ -1,4 +1,5 @@
 import { books, readingSessions, type Book, type InsertBook, type ReadingSession, type InsertReadingSession } from "@shared/schema";
+import { toLocalDateString, parseLocalDate } from "./date-utils";
 import { SQLiteStorage } from "./database";
 
 export interface IStorage {
@@ -130,15 +131,15 @@ export class MemStorage implements IStorage {
     const uniqueDates = Array.from(new Set(sessions.map(s => s.date))).sort().reverse();
     
     let streak = 0;
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateString(new Date());
     let currentDate = today;
     
     for (const date of uniqueDates) {
       if (date === currentDate) {
         streak++;
-        const prevDate = new Date(currentDate);
+        const prevDate = parseLocalDate(currentDate);
         prevDate.setDate(prevDate.getDate() - 1);
-        currentDate = prevDate.toISOString().split('T')[0];
+        currentDate = toLocalDateString(prevDate);
       } else {
         break;
       }
