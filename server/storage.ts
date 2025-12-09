@@ -128,23 +128,36 @@ export class MemStorage implements IStorage {
 
   async getReadingStreak(): Promise<number> {
     const sessions = Array.from(this.readingSessions.values());
-    const uniqueDates = Array.from(new Set(sessions.map(s => s.date))).sort().reverse();
-    
+    const dates = new Set(sessions.map(s => s.date));
+
+    if (dates.size === 0) {
+      return 0;
+    }
+
     let streak = 0;
     const today = toLocalDateString(new Date());
-    let currentDate = today;
     
-    for (const date of uniqueDates) {
-      if (date === currentDate) {
-        streak++;
-        const prevDate = parseLocalDate(currentDate);
-        prevDate.setDate(prevDate.getDate() - 1);
-        currentDate = toLocalDateString(prevDate);
-      } else {
-        break;
+    // Check if the streak starts today or yesterday
+    let currentDate = today;
+    if (!dates.has(currentDate)) {
+      const yesterday = parseLocalDate(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      currentDate = toLocalDateString(yesterday);
+
+      // If no reading yesterday either, streak is 0
+      if (!dates.has(currentDate)) {
+        return 0;
       }
     }
     
+    // Loop backwards from the current date to calculate the streak
+    while (dates.has(currentDate)) {
+      streak++;
+      const prevDate = parseLocalDate(currentDate);
+      prevDate.setDate(prevDate.getDate() - 1);
+      currentDate = toLocalDateString(prevDate);
+    }
+
     return streak;
   }
 
