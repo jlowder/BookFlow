@@ -214,17 +214,10 @@ export class SQLiteStorage implements IStorage {
     let streak = 0;
     const today = toLocalDateString(new Date());
     
-    // Check if the streak starts today or yesterday
+    // Check if the streak starts today
     let currentDate = today;
     if (!dates.has(currentDate)) {
-      const yesterday = parseLocalDate(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      currentDate = toLocalDateString(yesterday);
-
-      // If no reading yesterday either, streak is 0
-      if (!dates.has(currentDate)) {
-        return 0;
-      }
+      return 0;
     }
     
     // Loop backwards from the current date to calculate the streak
