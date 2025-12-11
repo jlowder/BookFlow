@@ -186,8 +186,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get reading statistics
   app.get("/api/stats", async (req, res) => {
     try {
+      const today = req.query.today as string | undefined;
+      if (!today) {
+        // Fallback to server's local date if not provided
+        console.warn(`[API /stats] 'today' query param not provided. Falling back to server's date.`);
+        const serverToday = new Date().toISOString().split('T')[0];
+        const [streak, totalBooks] = await Promise.all([
+          storage.getReadingStreak(serverToday),
+          storage.getTotalBooksRead()
+        ]);
+        return res.json({ streak, totalBooks });
+      }
+
       const [streak, totalBooks] = await Promise.all([
-        storage.getReadingStreak(),
+        storage.getReadingStreak(today),
         storage.getTotalBooksRead()
       ]);
       

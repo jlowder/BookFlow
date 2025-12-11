@@ -15,7 +15,6 @@ export default function Home() {
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState("");
   const [timeRange, setTimeRange] = useState("30");
 
   const getDateRange = () => {
@@ -34,15 +33,12 @@ export default function Home() {
 
   const { startDate, endDate } = getDateRange();
 
-  useEffect(() => {
-    const date = new Date();
-    setCurrentDate(date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }));
-  }, []);
+  const currentDateString = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
@@ -58,7 +54,11 @@ export default function Home() {
   });
 
   const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
-    queryKey: ["/api/stats"],
+    queryKey: ["/api/stats", toLocalDateString(new Date())],
+    queryFn: () => {
+      const today = toLocalDateString(new Date());
+      return fetch(`/api/stats?today=${today}`).then(res => res.json());
+    }
   });
 
   const handleEditModeToggle = (bookId: number) => {
@@ -88,14 +88,14 @@ export default function Home() {
               <h1 className="text-xl font-bold text-primary">BookFlow</h1>
             </div>
             <div className="flex items-center space-x-4">
-               <p className="text-sm text-gray-600">{currentDate}</p>
+               <p className="text-sm text-gray-600">{currentDateString}</p>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="hidden sm:flex items-center space-x-6 text-sm">
                 <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
                   <Flame className="w-4 h-4 text-orange-500" />
-                  <span className="font-medium">{stats.streak} day streak</span>
+                  <span className="font-medium" data-testid="current-streak-value">{stats.streak} day streak</span>
                 </span>
                 <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
                   <BookOpen className="w-4 h-4 text-blue-500" />
