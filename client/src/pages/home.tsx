@@ -58,7 +58,11 @@ export default function Home() {
   });
 
   const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
-    queryKey: ["/api/stats"],
+    queryKey: ["/api/stats", toLocalDateString(new Date())],
+    queryFn: () => {
+      const today = toLocalDateString(new Date());
+      return fetch(`/api/stats?today=${today}`).then(res => res.json());
+    }
   });
 
   const handleEditModeToggle = (bookId: number) => {
@@ -95,7 +99,7 @@ export default function Home() {
               <div className="hidden sm:flex items-center space-x-6 text-sm">
                 <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
                   <Flame className="w-4 h-4 text-orange-500" />
-                  <span className="font-medium">{stats.streak} day streak</span>
+                  <span className="font-medium" data-testid="current-streak-value">{stats.streak} day streak</span>
                 </span>
                 <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
                   <BookOpen className="w-4 h-4 text-blue-500" />

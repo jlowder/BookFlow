@@ -202,7 +202,7 @@ export class SQLiteStorage implements IStorage {
     return stmt.get(id) as ReadingSession | undefined;
   }
 
-  async getReadingStreak(): Promise<number> {
+  async getReadingStreak(today: string): Promise<number> {
     const stmt = this.db.prepare('SELECT DISTINCT date FROM reading_sessions ORDER BY date DESC');
     const results = stmt.all() as { date: string }[];
     const dates = new Set(results.map(r => r.date));
@@ -210,16 +210,13 @@ export class SQLiteStorage implements IStorage {
     if (dates.size === 0) {
       return 0;
     }
-
-    let streak = 0;
-    const today = toLocalDateString(new Date());
     
-    // Check if the streak starts today
     let currentDate = today;
     if (!dates.has(currentDate)) {
       return 0;
     }
-    
+
+    let streak = 0;
     // Loop backwards from the current date to calculate the streak
     while (dates.has(currentDate)) {
       streak++;
