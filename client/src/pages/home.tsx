@@ -15,7 +15,6 @@ export default function Home() {
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
-  const [currentDate, setCurrentDate] = useState("");
   const [timeRange, setTimeRange] = useState("30");
 
   const getDateRange = () => {
@@ -34,15 +33,12 @@ export default function Home() {
 
   const { startDate, endDate } = getDateRange();
 
-  useEffect(() => {
-    const date = new Date();
-    setCurrentDate(date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }));
-  }, []);
+  const currentDateString = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
@@ -92,7 +88,7 @@ export default function Home() {
               <h1 className="text-xl font-bold text-primary">BookFlow</h1>
             </div>
             <div className="flex items-center space-x-4">
-               <p className="text-sm text-gray-600">{currentDate}</p>
+               <p className="text-sm text-gray-600">{currentDateString}</p>
             </div>
             
             <div className="flex items-center space-x-4">
