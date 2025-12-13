@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useCurrentDate } from "../hooks/use-current-date";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database } from "lucide-react";
@@ -16,10 +17,11 @@ export default function Home() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [timeRange, setTimeRange] = useState("30");
+  const currentDate = useCurrentDate();
 
   const getDateRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
+    const endDate = new Date(currentDate);
+    const startDate = new Date(currentDate);
 
     if (timeRange === "thisyear") {
       startDate.setFullYear(endDate.getFullYear(), 0, 1);
@@ -33,7 +35,7 @@ export default function Home() {
 
   const { startDate, endDate } = getDateRange();
 
-  const currentDateString = new Date().toLocaleDateString('en-US', {
+  const currentDateString = currentDate.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -54,9 +56,9 @@ export default function Home() {
   });
 
   const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{ streak: number; totalBooks: number }>({
-    queryKey: ["/api/stats", toLocalDateString(new Date())],
+    queryKey: ["/api/stats", toLocalDateString(currentDate)],
     queryFn: () => {
-      const today = toLocalDateString(new Date());
+      const today = toLocalDateString(currentDate);
       return fetch(`/api/stats?today=${today}`).then(res => res.json());
     }
   });

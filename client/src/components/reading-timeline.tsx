@@ -100,11 +100,8 @@ export default function ReadingTimeline({
       })()
     : startDate;
   
-  // Use local date string to force fresh queries when date changes in user's timezone
-  const currentLocalDate = toLocalDateString(new Date());
-  
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate), currentLocalDate],
+    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate)],
     queryFn: () => {
       const fetchStart = toLocalDateString(fetchStartDate);
       const fetchEnd = toLocalDateString(endDate);
@@ -117,8 +114,7 @@ export default function ReadingTimeline({
         }
       }).then(res => res.json());
     },
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to catch date changes
-    staleTime: 0, // Never use stale data - always refetch when date changes
+    staleTime: 0,
   });
 
   const currentBooks = books.filter(book => book.status === "reading");
