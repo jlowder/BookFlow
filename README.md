@@ -1,6 +1,6 @@
 # BookFlow
 
-BookFlow is a modern, web-based reading journal designed to help you track your reading habits, discover insights, and maintain a complete history of your literary journey. With an intuitive interface and powerful features, BookFlow makes it easy to manage your library, monitor your progress, and stay motivated.
+BookFlow is a modern, web-based reading journal designed to help you track your reading habits, discover insights, and maintain a complete history of your literary journey. With an intuitive and easy to use interface, BookFlow makes it easy to manage your library, monitor your progress, and stay motivated.
 
 ## Features
 
