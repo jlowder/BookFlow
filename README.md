@@ -4,13 +4,13 @@ BookFlow is a modern, web-based reading journal designed to help you track your 
 
 ## Features
 
-- **Dashboard**: Get a quick overview of your reading activity, including your current reading streak, the number of books you're currently reading, and your total completed books.
-- **Reading Timeline**: Visualize your reading history on an interactive timeline, allowing you to see your reading patterns over various time ranges. 
-- **Book Management**: Add new books to your journal, edit their details, and mark them as complete.
+- **Dashboard**: Get a quick overview of your reading activity: visual timeline, current reading streak, and book counts.
+- **Reading Timeline**: Visualize your reading history on an interactive timeline, reminiscent of a github contribution graph.
+- **Book Management**: Add new books, track your reading progress, and mark them complete.
 - **Data Management**:
   - **Export**: Back up your entire reading history to a CSV file, ensuring your data is always safe.
   - **Import**: Restore your reading journal from a CSV backup, making it easy to migrate your data.
-- **Dockerized Deployment**: Easy deployment using docker
+- **Dockerized Deployment**: Easy deployment using docker-compose.
 
 ## Getting Started
 
