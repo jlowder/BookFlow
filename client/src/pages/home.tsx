@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, Flame, Library, Database } from "lucide-react";
+import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
 import type { Book } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
@@ -88,6 +88,9 @@ export default function Home() {
                 <BookOpen className="text-white w-4 h-4" />
               </div>
               <h1 className="text-xl font-bold text-primary">BookFlow</h1>
+              <a href="https://github.com/jlowder/BookFlow" target="_blank" rel="noopener noreferrer">
+                <Github className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+              </a>
             </div>
             <div className="flex items-center space-x-4">
                <p className="text-sm text-gray-600">{currentDateString}</p>
