@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Library, Home } from "lucide-react";
+import { BookOpen, Library, Home, Github } from "lucide-react";
 import type { Book } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import BookDetailsModal from "@/components/book-details-modal";
@@ -36,6 +36,9 @@ export default function Archive() {
                 <BookOpen className="text-white w-4 h-4" />
               </div>
               <h1 className="text-xl font-bold text-primary">BookFlow Archive</h1>
+              <a href="https://github.com/jlowder/BookFlow" target="_blank" rel="noopener noreferrer">
+                <Github className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+              </a>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/">

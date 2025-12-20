@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Upload, FileText, Database, BookOpen, Trash2 } from "lucide-react";
+import { Download, Upload, FileText, Database, BookOpen, Trash2, Github } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { toLocalDateString } from "@/lib/date-utils";
 
@@ -142,6 +142,9 @@ export default function DataManagement() {
                 <BookOpen className="text-white w-4 h-4" />
               </div>
               <h1 className="text-xl font-bold text-primary">BookFlow</h1>
+              <a href="https://github.com/jlowder/BookFlow" target="_blank" rel="noopener noreferrer">
+                <Github className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+              </a>
               <span className="text-gray-400">|</span>
               <h2 className="text-lg text-gray-600">Data Management</h2>
             </div>
