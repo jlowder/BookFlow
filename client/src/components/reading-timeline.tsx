@@ -91,7 +91,7 @@ export default function ReadingTimeline({
 
   // For grid view, we need to fetch data from the Sunday before the start date
   // to ensure the first week's padding days have session data
-  const shouldUseGridView = parseInt(timeRange) > 30 || timeRange === "thisyear";
+  const shouldUseGridView = timeRange === 'all' || parseInt(timeRange) > 30;
   const fetchStartDate = shouldUseGridView 
     ? (() => {
         const gridStart = new Date(startDate);
@@ -220,123 +220,100 @@ export default function ReadingTimeline({
     return segments;
   };
 
-  // Generate grid data for GitHub-style view
   const generateGridData = () => {
-    if (timelineData.length === 0) return { weeks: [], monthLabels: [] };
-    
-    const weeks = [];
-    const monthLabels = [];
-    // Parse dates without timezone issues
-    const startDateStr = timelineData[0].date;
-    const endDateStr = timelineData[timelineData.length - 1].date;
-    const gridDataStartDate = new Date(startDateStr + 'T00:00:00');
-    const gridDataEndDate = new Date(endDateStr + 'T00:00:00');
-    
+    if (timelineData.length === 0) return [];
+
     // Create a map for quick lookup of timeline data
-    const dayMap = new Map();
+    const dayMap = new Map(timelineData.map(day => [day.date, day]));
+
+    // Group timeline data by year
+    const dataByYear: { [year: number]: any[] } = {};
     timelineData.forEach(day => {
-      dayMap.set(day.date, day);
+      const year = new Date(day.date + 'T00:00:00').getFullYear();
+      if (!dataByYear[year]) {
+        dataByYear[year] = [];
+      }
+      dataByYear[year].push(day);
     });
-    console.log('[Timeline] dayMap has', dayMap.size, 'entries. First few dates:', Array.from(dayMap.keys()).slice(0, 5));
-    
-    // Find the Sunday before our start date
-    const gridStartDate = new Date(gridDataStartDate);
-    gridStartDate.setDate(gridDataStartDate.getDate() - gridDataStartDate.getDay());
-    
-    // Generate weeks
-    let currentDate = new Date(gridStartDate);
-    let currentMonth = -1; // Initialize to -1 to ensure first month is captured
-    let weekIndex = 0;
-    
-    while (currentDate <= gridDataEndDate) {
-      const week = new Array(7).fill(null); // Pre-fill array with 7 slots for each day
-      
-      // Generate 7 days for this week, placing each day in the correct position
-      for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-        // Track month changes for labels - check on each day within our range
-        if (currentDate >= gridDataStartDate && currentDate <= gridDataEndDate && currentDate.getMonth() !== currentMonth) {
-          currentMonth = currentDate.getMonth();
-          monthLabels.push({
-            month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
-            weekIndex: weekIndex
-          });
+
+    const yearlyGrids = Object.entries(dataByYear)
+      .sort(([yearA], [yearB]) => parseInt(yearA) - parseInt(yearB))
+      .map(([year, yearData]) => {
+        const startDateStr = yearData[0].date;
+        const endDateStr = yearData[yearData.length - 1].date;
+        const gridDataStartDate = new Date(startDateStr + 'T00:00:00');
+        const gridDataEndDate = new Date(endDateStr + 'T00:00:00');
+
+        // Find the Sunday before our start date
+        const gridStartDate = new Date(gridDataStartDate);
+        gridStartDate.setDate(gridDataStartDate.getDate() - gridDataStartDate.getDay());
+
+        // Generate weeks
+        const weeks: any[][] = [];
+        const monthLabels: { month: string; weekIndex: number }[] = [];
+        let currentDate = new Date(gridStartDate);
+        let currentMonth = -1;
+        let weekIndex = 0;
+
+        while (currentDate <= gridDataEndDate) {
+          const week: any[] = new Array(7).fill(null);
+
+          for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+            if (currentDate >= gridDataStartDate && currentDate <= gridDataEndDate && currentDate.getMonth() !== currentMonth) {
+              currentMonth = currentDate.getMonth();
+              monthLabels.push({
+                month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+                weekIndex: weekIndex
+              });
+            }
+
+            const dateStr = toLocalDateString(currentDate);
+            const actualDayOfWeek = currentDate.getDay();
+            const dayData = dayMap.get(dateStr);
+
+            if (dayData) {
+              const bookIds = dayData.sessions.map((s: ReadingSession) => s.bookId);
+              const uniqueBookIds = [...new Set(bookIds)];
+              const dayBooks = uniqueBookIds.map(id => books.find(b => b.id === id)).filter(Boolean) as Book[];
+              const colors = dayBooks.map(b => b.color);
+
+              week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading };
+            } else {
+              const isInRange = currentDate >= gridDataStartDate && currentDate <= gridDataEndDate;
+              week[actualDayOfWeek] = { date: isInRange ? dateStr : '', isEmpty: !isInRange, sessions: [], colors: [], hasReading: false };
+            }
+
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+
+          for (let i = 0; i < 7; i++) {
+            if (week[i] === null) {
+              week[i] = { date: '', isEmpty: true, sessions: [], colors: [], hasReading: false };
+            }
+          }
+
+          weeks.push(week);
+          weekIndex++;
         }
-        
-        // Use local date string to avoid timezone issues
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-        const day = String(currentDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-        
-        const actualDayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        const dayData = dayMap.get(dateStr);
-        
-        if (dayData) {
-          // Get unique books for this day (avoid duplicates from multiple sessions)
-          const bookIds = dayData.sessions.map((session: any) => session.bookId) as number[];
-          const uniqueBookIds = bookIds.filter((id: number, index: number) => bookIds.indexOf(id) === index);
-          const dayBooks = uniqueBookIds.map((bookId: number) => 
-            books.find(book => book.id === bookId)
-          ).filter(Boolean) as Book[];
-          
-          const colors = dayBooks.map(book => book.color);
-          
-          week[actualDayOfWeek] = {
-            date: dateStr,
-            isEmpty: false,
-            sessions: dayData.sessions,
-            colors: colors.length > 0 ? colors : [],
-            hasReading: dayData.hasReading
-          };
-        } else {
-          // Day outside our range or no data
-          const isInRange = currentDate >= gridDataStartDate && currentDate <= gridDataEndDate;
-          week[actualDayOfWeek] = {
-            date: isInRange ? dateStr : '',
-            isEmpty: !isInRange,
-            sessions: [],
-            colors: [],
-            hasReading: false
-          };
-        }
-        
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      // Fill any null slots with empty days
-      for (let i = 0; i < 7; i++) {
-        if (week[i] === null) {
-          week[i] = {
-            date: '',
-            isEmpty: true,
-            sessions: [],
-            colors: [],
-            hasReading: false
-          };
-        }
-      }
-      
-      weeks.push(week);
-      weekIndex++;
-    }
-    
-    return { weeks, monthLabels };
+
+        // Process month labels for this year's grid
+        const processedMonthLabels: { month: string; weekIndex: number; left: number }[] = [];
+        let lastLeft = -Infinity;
+        const LABEL_SPACING = 30;
+        monthLabels.forEach(label => {
+          const idealLeft = label.weekIndex * 16;
+          const newLeft = Math.max(idealLeft, lastLeft + LABEL_SPACING);
+          processedMonthLabels.push({ ...label, left: newLeft });
+          lastLeft = newLeft;
+        });
+
+        return { year: parseInt(year), weeks, monthLabels: processedMonthLabels };
+      });
+
+    return yearlyGrids;
   };
 
-  const gridData = generateGridData();
-
-  // Process month labels to prevent overlap
-  const processedMonthLabels: { month: string; weekIndex: number; left: number }[] = [];
-  if (gridData.monthLabels) {
-    let lastLeft = -Infinity;
-    const LABEL_SPACING = 30; // Spacing between month labels in pixels
-    gridData.monthLabels.forEach(label => {
-      const idealLeft = label.weekIndex * 16;
-      const newLeft = Math.max(idealLeft, lastLeft + LABEL_SPACING);
-      processedMonthLabels.push({ ...label, left: newLeft });
-      lastLeft = newLeft;
-    });
-  }
+  const yearlyGridData = generateGridData();
 
   return (
     <section className="mb-12">
@@ -348,10 +325,9 @@ export default function ReadingTimeline({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="90">3 months</SelectItem>
-            <SelectItem value="180">6 months</SelectItem>
             <SelectItem value="365">12 months</SelectItem>
-            <SelectItem value="thisyear">This year</SelectItem>
+            <SelectItem value="730">24 months</SelectItem>
+            <SelectItem value="all">All time</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -377,69 +353,72 @@ export default function ReadingTimeline({
           <div className="relative">
             {shouldUseGridView ? (
               /* GitHub-style Grid View */
-              <div className="space-y-4">
-                {/* Month Labels */}
-                <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
-                  <div className="w-8"></div>
-                  <div className="relative flex-1">
-                    {processedMonthLabels.map((label, i) => (
-                      <div 
-                        key={i} 
-                        className="text-xs text-gray-600 dark:text-gray-400"
-                        style={{ 
-                          position: 'absolute',
-                          left: `${label.left}px`
-                        }}
-                      >
-                        {label.month}
+              <div className="flex flex-col items-center">
+                {yearlyGridData.map(({ year, weeks, monthLabels }) => (
+                  <div key={year} className="mb-8 last:mb-0">
+                    <h3 className="text-lg font-semibold text-center mb-4">{year}</h3>
+                    <div className="space-y-4">
+                      {/* Month Labels */}
+                      <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        <div className="w-8"></div>
+                        <div className="relative flex-1">
+                          {monthLabels.map((label, i) => (
+                            <div
+                              key={i}
+                              className="text-xs text-gray-600 dark:text-gray-400"
+                              style={{
+                                position: 'absolute',
+                                left: `${label.left}px`
+                              }}
+                            >
+                              {label.month}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Grid with Day Labels - GitHub Style Horizontal Layout */}
-                <div className="flex">
-                  {/* Day of Week Labels */}
-                  <div className="flex flex-col">
-                    {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                      <div key={i} className="w-8 h-3 mb-1 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
-                        {day}
+
+                      {/* Grid with Day Labels */}
+                      <div className="flex">
+                        {/* Day of Week Labels */}
+                        <div className="flex flex-col">
+                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                            <div key={i} className="w-8 h-3 mb-1 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Grid */}
+                        <div className="flex">
+                          {weeks.map((week, weekIndex) => (
+                            <div key={weekIndex} className="flex flex-col">
+                              {week.map((day, dayIndex) => (
+                                <div
+                                  key={dayIndex}
+                                  className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''}`}
+                                  style={{
+                                    background: day.isEmpty
+                                      ? 'transparent'
+                                      : day.colors.length === 0
+                                        ? '#f3f4f6'
+                                        : day.colors.length === 1
+                                          ? day.colors[0]
+                                          : day.colors.length === 2
+                                            ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
+                                            : `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
+                                  }}
+                                  title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
+                                  onClick={() => handleGridCellClick(day)}
+                                ></div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                  
-                  {/* Grid - Weeks flow horizontally */}
-                  <div className="flex">
-                    {gridData.weeks?.map((week: any, weekIndex: number) => (
-                      <div key={weekIndex} className="flex flex-col">
-                        {week.map((day: any, dayIndex: number) => (
-                          <div
-                            key={dayIndex}
-                            className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${
-                              editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''
-                            }`}
-                            style={{
-                              background: day.isEmpty 
-                                ? 'transparent'
-                                : day.colors.length === 0
-                                  ? '#f3f4f6'
-                                  : day.colors.length === 1
-                                    ? day.colors[0]
-                                    : day.colors.length === 2
-                                      ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
-                                      : day.colors.length === 3
-                                        ? `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
-                                        : `linear-gradient(90deg, ${day.colors.slice(0, 4).map((color: string, i: number) => `${color} ${i * 25}% ${(i + 1) * 25}%`).join(', ')})`
-                            }}
-                            title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
-                            onClick={() => handleGridCellClick(day)}
-                          ></div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
+                ))}
+
                 {/* Grid Interaction Hints */}
                 <div className="flex items-center justify-center mt-4 text-xs text-gray-600 dark:text-gray-400">
                   <Info className="w-4 h-4 mr-2" />
