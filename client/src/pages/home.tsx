@@ -23,8 +23,8 @@ export default function Home() {
     const endDate = new Date(currentDate);
     const startDate = new Date(currentDate);
 
-    if (timeRange === "thisyear") {
-      startDate.setFullYear(endDate.getFullYear(), 0, 1);
+    if (timeRange === "all") {
+      startDate.setFullYear(1970, 0, 1);
     } else {
       const days = parseInt(timeRange);
       startDate.setDate(endDate.getDate() - days);
