@@ -239,6 +239,12 @@ export default function ReadingTimeline({
     const yearlyGrids = Object.entries(dataByYear)
       .sort(([yearA], [yearB]) => parseInt(yearA) - parseInt(yearB))
       .map(([year, yearData]) => {
+        // Check if there are any reading sessions for this year
+        const hasReadingDays = yearData.some((day: any) => day.hasReading);
+        if (!hasReadingDays) {
+          return null;
+        }
+
         const startDateStr = yearData[0].date;
         const endDateStr = yearData[yearData.length - 1].date;
         const gridDataStartDate = new Date(startDateStr + 'T00:00:00');
@@ -308,7 +314,8 @@ export default function ReadingTimeline({
         });
 
         return { year: parseInt(year), weeks, monthLabels: processedMonthLabels };
-      });
+      })
+      .filter(Boolean);
 
     return yearlyGrids;
   };
@@ -354,76 +361,84 @@ export default function ReadingTimeline({
             {shouldUseGridView ? (
               /* GitHub-style Grid View */
               <div className="flex flex-col items-center">
-                {yearlyGridData.map(({ year, weeks, monthLabels }) => (
-                  <div key={year} className="mb-8 last:mb-0">
-                    <h3 className="text-lg font-semibold text-center mb-4">{year}</h3>
-                    <div className="space-y-4">
-                      {/* Month Labels */}
-                      <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        <div className="w-8"></div>
-                        <div className="relative flex-1">
-                          {monthLabels.map((label, i) => (
-                            <div
-                              key={i}
-                              className="text-xs text-gray-600 dark:text-gray-400"
-                              style={{
-                                position: 'absolute',
-                                left: `${label.left}px`
-                              }}
-                            >
-                              {label.month}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Grid with Day Labels */}
-                      <div className="flex">
-                        {/* Day of Week Labels */}
-                        <div className="flex flex-col">
-                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                            <div key={i} className="w-8 h-3 mb-1 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
-                              {day}
-                            </div>
-                          ))}
+                {yearlyGridData && yearlyGridData.length > 0 ? (
+                  yearlyGridData.map(({ year, weeks, monthLabels }) => (
+                    <div key={year} className="mb-8 last:mb-0">
+                      <h3 className="text-lg font-semibold text-center mb-4">{year}</h3>
+                      <div className="space-y-4">
+                        {/* Month Labels */}
+                        <div className="flex text-xs text-gray-600 dark:text-gray-400 mb-2">
+                          <div className="w-8"></div>
+                          <div className="relative flex-1">
+                            {monthLabels.map((label, i) => (
+                              <div
+                                key={i}
+                                className="text-xs text-gray-600 dark:text-gray-400"
+                                style={{
+                                  position: 'absolute',
+                                  left: `${label.left}px`
+                                }}
+                              >
+                                {label.month}
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
-                        {/* Grid */}
+                        {/* Grid with Day Labels */}
                         <div className="flex">
-                          {weeks.map((week, weekIndex) => (
-                            <div key={weekIndex} className="flex flex-col">
-                              {week.map((day, dayIndex) => (
-                                <div
-                                  key={dayIndex}
-                                  className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''}`}
-                                  style={{
-                                    background: day.isEmpty
-                                      ? 'transparent'
-                                      : day.colors.length === 0
-                                        ? '#f3f4f6'
-                                        : day.colors.length === 1
-                                          ? day.colors[0]
-                                          : day.colors.length === 2
-                                            ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
-                                            : `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
-                                  }}
-                                  title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
-                                  onClick={() => handleGridCellClick(day)}
-                                ></div>
-                              ))}
-                            </div>
-                          ))}
+                          {/* Day of Week Labels */}
+                          <div className="flex flex-col">
+                            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                              <div key={i} className="w-8 h-3 mb-1 text-xs text-gray-500 text-right pr-2 flex items-center justify-end">
+                                {day}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Grid */}
+                          <div className="flex">
+                            {weeks.map((week, weekIndex) => (
+                              <div key={weekIndex} className="flex flex-col">
+                                {week.map((day, dayIndex) => (
+                                  <div
+                                    key={dayIndex}
+                                    className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''}`}
+                                    style={{
+                                      background: day.isEmpty
+                                        ? 'transparent'
+                                        : day.colors.length === 0
+                                          ? '#f3f4f6'
+                                          : day.colors.length === 1
+                                            ? day.colors[0]
+                                            : day.colors.length === 2
+                                              ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
+                                              : `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
+                                    }}
+                                    title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
+                                    onClick={() => handleGridCellClick(day)}
+                                  ></div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    No reading sessions recorded for this period.
                   </div>
-                ))}
+                )}
 
                 {/* Grid Interaction Hints */}
-                <div className="flex items-center justify-center mt-4 text-xs text-gray-600 dark:text-gray-400">
-                  <Info className="w-4 h-4 mr-2" />
-                  <span>Each square represents a day • Multiple colors show different books read</span>
-                </div>
+                {yearlyGridData && yearlyGridData.length > 0 && (
+                  <div className="flex items-center justify-center mt-4 text-xs text-gray-600 dark:text-gray-400">
+                    <Info className="w-4 h-4 mr-2" />
+                    <span>Each square represents a day • Multiple colors show different books read</span>
+                  </div>
+                )}
               </div>
             ) : (
               /* Original Ribbon View */
