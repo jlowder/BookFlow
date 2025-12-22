@@ -496,8 +496,17 @@ export default function ReadingTimeline({
 
                 {/* Timeline Interaction Hints */}
                 <div className="flex items-center justify-center mt-6 text-xs text-gray-600 dark:text-gray-400">
-                  <Info className="w-4 h-4 mr-2" />
-                  <span>Darker sections indicate reading days • Lighter sections show gaps</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Darker sections indicate reading days</p>
+                        <p>Lighter sections show gaps</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             )}
