@@ -65,10 +65,9 @@ export default function DataManagement() {
 
     try {
       setIsImporting(true);
-      const response = await apiRequest("POST", "/api/import/csv", {
+      const result = await apiRequest("POST", "/api/import/csv", {
         csvData: importData
       });
-      const result = await response.json() as { results: { books: { created: number; updated: number; errors: number }; sessions: { created: number; errors: number } } };
       
       toast({
         title: "Import successful",
@@ -107,8 +106,7 @@ export default function DataManagement() {
   const handleClearAllData = async () => {
     try {
       setIsClearing(true);
-      const response = await apiRequest("DELETE", "/api/clear-all-data");
-      const result = await response.json() as { message: string; deleted: { books: number; sessions: number } };
+      const result = await apiRequest("DELETE", "/api/clear-all-data");
       
       toast({
         title: "Data cleared successfully",
