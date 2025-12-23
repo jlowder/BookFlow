@@ -10,6 +10,7 @@ import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
 import BookDetailsModal from "@/components/book-details-modal";
 import { toLocalDateString } from "@/lib/date-utils";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
@@ -50,18 +51,20 @@ export default function Home() {
     queryKey: ["/api/reading-sessions", toLocalDateString(currentDate)],
     queryFn: () => {
       const today = toLocalDateString(currentDate);
-      return fetch(`/api/reading-sessions?date=${today}`).then(res => res.json());
+      return apiRequest("GET", `/api/reading-sessions?date=${today}`);
     }
   });
 
-  const readTodayBookIds = new Set(readingSessionsToday.map(s => s.bookId));
+  const readingSessionsByBookId = new Map(
+    readingSessionsToday.map(session => [session.bookId, session])
+  );
 
   const { data: completedBooks = [] } = useQuery<Book[]>({
     queryKey: ["/api/books/status/completed", toLocalDateString(startDate), toLocalDateString(endDate)],
     queryFn: () => {
       const start = toLocalDateString(startDate);
       const end = toLocalDateString(endDate);
-      return fetch(`/api/books/status/completed?startDate=${start}&endDate=${end}`).then(res => res.json());
+      return apiRequest("GET", `/api/books/status/completed?startDate=${start}&endDate=${end}`);
     }
   });
 
@@ -176,7 +179,8 @@ export default function Home() {
                   onEditModeToggle={handleEditModeToggle}
                   onClick={handleBookClick}
                   status="reading"
-                  isReadToday={readTodayBookIds.has(book.id)}
+                  isReadToday={readingSessionsByBookId.has(book.id)}
+                  readingSessionId={readingSessionsByBookId.get(book.id)?.id}
                 />
               ))}
             </div>

@@ -16,25 +16,25 @@ interface BookCardProps {
   onClick?: (book: Book) => void;
   status: "reading" | "completed";
   isReadToday?: boolean;
+  readingSessionId?: number;
 }
 
-export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status, isReadToday = false }: BookCardProps) {
+export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status, isReadToday = false, readingSessionId }: BookCardProps) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const markReadMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       const todayLocal = toLocalDateString(new Date());
       
-      const res = await apiRequest("POST", "/api/reading-sessions", {
+      return apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,
         date: todayLocal,
         pagesRead: 1,
         duration: 30,
       });
-      return res.json();
     },
     onSuccess: () => {
       toast({
@@ -49,6 +49,28 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       toast({
         title: "Error",
         description: "Failed to record reading session",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteReadingSessionMutation = useMutation({
+    mutationFn: (id: number) => {
+      return apiRequest("DELETE", `/api/reading-sessions/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reading session removed",
+        description: "Your reading progress for today has been removed.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove reading session",
         variant: "destructive",
       });
     },
@@ -151,8 +173,15 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={(e) => { e.stopPropagation(); markReadMutation.mutate(); }}
-                  disabled={markReadMutation.isPending || isReadToday}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isReadToday && readingSessionId) {
+                      deleteReadingSessionMutation.mutate(readingSessionId);
+                    } else {
+                      markReadMutation.mutate();
+                    }
+                  }}
+                  disabled={markReadMutation.isPending || deleteReadingSessionMutation.isPending}
                   className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 ${
                     isReadToday
                       ? 'bg-green-100 hover:bg-green-200 border-green-200 text-green-800'
