@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
 import { Link } from "wouter";
@@ -19,6 +19,17 @@ export default function Home() {
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [timeRange, setTimeRange] = useState("30");
   const currentDate = useCurrentDate();
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      if (window.innerWidth < 640) {
+        setTimeRange("30");
+      }
+    };
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   const getDateRange = () => {
     const endDate = new Date(currentDate);
