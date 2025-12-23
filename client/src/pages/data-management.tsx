@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Upload, FileText, Database, BookOpen, Trash2, Github } from "lucide-react";
@@ -57,8 +56,8 @@ export default function DataManagement() {
   const handleImport = async () => {
     if (!importData.trim()) {
       toast({
-        title: "No data provided",
-        description: "Please paste CSV data to import",
+        title: "No file selected",
+        description: "Please choose a CSV file to import",
         variant: "destructive",
       });
       return;
@@ -231,18 +230,6 @@ export default function DataManagement() {
                   />
                 </div>
 
-                {/* Manual Paste */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Or Paste CSV Data
-                  </label>
-                  <Textarea
-                    value={importData}
-                    onChange={(e) => setImportData(e.target.value)}
-                    placeholder="Paste your CSV data here..."
-                    className="min-h-32"
-                  />
-                </div>
 
                 <div className="flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <FileText className="w-4 h-4 text-yellow-600 mt-0.5" />
