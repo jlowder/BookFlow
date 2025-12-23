@@ -28,15 +28,15 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
     mutationFn: async () => {
       const todayLocal = toLocalDateString(new Date());
       
-      await apiRequest("POST", "/api/reading-sessions", {
+      const res = await apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,
         date: todayLocal,
         pagesRead: 1,
         duration: 30,
       });
+      return res.json();
     },
     onSuccess: () => {
-      setIsMarked(true);
       toast({
         title: "Reading recorded!",
         description: `Marked progress for "${book.title}"`,
