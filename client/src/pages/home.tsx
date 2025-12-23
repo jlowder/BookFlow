@@ -4,12 +4,13 @@ import { useCurrentDate } from "../hooks/use-current-date";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
-import type { Book } from "@shared/schema";
+import type { Book, ReadingSession } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
 import BookDetailsModal from "@/components/book-details-modal";
 import { toLocalDateString } from "@/lib/date-utils";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
@@ -46,12 +47,24 @@ export default function Home() {
     queryKey: ["/api/books/status/reading"],
   });
 
+  const { data: readingSessionsToday = [] } = useQuery<ReadingSession[]>({
+    queryKey: ["/api/reading-sessions", toLocalDateString(currentDate)],
+    queryFn: () => {
+      const today = toLocalDateString(currentDate);
+      return apiRequest("GET", `/api/reading-sessions?date=${today}`);
+    }
+  });
+
+  const readingSessionsByBookId = new Map(
+    readingSessionsToday.map(session => [session.bookId, session])
+  );
+
   const { data: completedBooks = [] } = useQuery<Book[]>({
     queryKey: ["/api/books/status/completed", toLocalDateString(startDate), toLocalDateString(endDate)],
     queryFn: () => {
       const start = toLocalDateString(startDate);
       const end = toLocalDateString(endDate);
-      return fetch(`/api/books/status/completed?startDate=${start}&endDate=${end}`).then(res => res.json());
+      return apiRequest("GET", `/api/books/status/completed?startDate=${start}&endDate=${end}`);
     }
   });
 
@@ -166,6 +179,8 @@ export default function Home() {
                   onEditModeToggle={handleEditModeToggle}
                   onClick={handleBookClick}
                   status="reading"
+                  isReadToday={readingSessionsByBookId.has(book.id)}
+                  readingSessionId={readingSessionsByBookId.get(book.id)?.id}
                 />
               ))}
             </div>

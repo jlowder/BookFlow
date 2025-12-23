@@ -15,20 +15,21 @@ interface BookCardProps {
   onEditModeToggle?: (bookId: number) => void;
   onClick?: (book: Book) => void;
   status: "reading" | "completed";
+  isReadToday?: boolean;
+  readingSessionId?: number;
 }
 
-export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status }: BookCardProps) {
-  const [isMarked, setIsMarked] = useState(false);
+export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status, isReadToday = false, readingSessionId }: BookCardProps) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const markReadMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: () => {
       const todayLocal = toLocalDateString(new Date());
       
-      await apiRequest("POST", "/api/reading-sessions", {
+      return apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,
         date: todayLocal,
         pagesRead: 1,
@@ -36,14 +37,10 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       });
     },
     onSuccess: () => {
-      setIsMarked(true);
       toast({
         title: "Reading recorded!",
         description: `Marked progress for "${book.title}"`,
       });
-      
-      // Reset after 2 seconds
-      setTimeout(() => setIsMarked(false), 2000);
       
       queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
@@ -52,6 +49,28 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       toast({
         title: "Error",
         description: "Failed to record reading session",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteReadingSessionMutation = useMutation({
+    mutationFn: (id: number) => {
+      return apiRequest("DELETE", `/api/reading-sessions/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reading session removed",
+        description: "Your reading progress for today has been removed.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove reading session",
         variant: "destructive",
       });
     },
@@ -154,12 +173,23 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={(e) => { e.stopPropagation(); markReadMutation.mutate(); }}
-                  disabled={markReadMutation.isPending || isMarked}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 hover:bg-gray-200 bg-[#dcfce7]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isReadToday && readingSessionId) {
+                      deleteReadingSessionMutation.mutate(readingSessionId);
+                    } else {
+                      markReadMutation.mutate();
+                    }
+                  }}
+                  disabled={markReadMutation.isPending || deleteReadingSessionMutation.isPending}
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 ${
+                    isReadToday
+                      ? 'bg-green-100 hover:bg-green-200 border-green-200 text-green-800'
+                      : 'hover:bg-gray-100 bg-white'
+                  }`}
                 >
-                  <Check className="w-3 h-3 mr-1" />
-                  {isMarked ? 'Recorded!' : 'Read Today'}
+                  {isReadToday && <Check className="w-4 h-4" />}
+                  Read Today
                 </Button>
 
                 <div className="flex space-x-1">

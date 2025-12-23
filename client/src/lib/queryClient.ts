@@ -20,7 +20,10 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return res;
+  if (res.status === 204) {
+    return;
+  }
+  return res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
