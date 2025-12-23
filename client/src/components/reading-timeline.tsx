@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Check } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -28,6 +29,7 @@ export default function ReadingTimeline({
 }: ReadingTimelineProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   // Force cache invalidation on mount and time range changes to ensure fresh data
   useEffect(() => {
@@ -327,7 +329,7 @@ export default function ReadingTimeline({
     <section className="mb-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-primary">Reading Timeline</h2>
-        <div className="hidden sm:block">
+        {!isMobile && (
           <Select value={timeRange} onValueChange={onTimeRangeChange}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -339,7 +341,7 @@ export default function ReadingTimeline({
               <SelectItem value="all">All time</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        )}
       </div>
 
       <Card>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
@@ -19,26 +20,17 @@ export default function Home() {
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [timeRange, setTimeRange] = useState("30");
   const currentDate = useCurrentDate();
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      if (window.innerWidth < 640) {
-        setTimeRange("30");
-      }
-    };
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
+  const isMobile = useIsMobile();
 
   const getDateRange = () => {
+    const effectiveTimeRange = isMobile ? "30" : timeRange;
     const endDate = new Date(currentDate);
     const startDate = new Date(currentDate);
 
-    if (timeRange === "all") {
+    if (effectiveTimeRange === "all") {
       startDate.setFullYear(1970, 0, 1);
     } else {
-      const days = parseInt(timeRange);
+      const days = parseInt(effectiveTimeRange);
       startDate.setDate(endDate.getDate() - days);
     }
 
@@ -215,7 +207,7 @@ export default function Home() {
         <ReadingTimeline 
           editModeBookId={editModeBookId}
           onEditModeToggle={handleEditModeToggle}
-          timeRange={timeRange}
+          timeRange={isMobile ? "30" : timeRange}
           onTimeRangeChange={setTimeRange}
           startDate={startDate}
           endDate={endDate}
