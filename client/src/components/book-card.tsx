@@ -42,8 +42,7 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
         description: `Marked progress for "${book.title}"`,
       });
       
-      const today = toLocalDateString(new Date());
-      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions", today] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
     onError: () => {
