@@ -4,7 +4,7 @@ import { useCurrentDate } from "../hooks/use-current-date";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
-import type { Book } from "@shared/schema";
+import type { Book, ReadingSession } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
@@ -45,6 +45,16 @@ export default function Home() {
   const { data: currentBooks = [], isLoading: booksLoading } = useQuery<Book[]>({
     queryKey: ["/api/books/status/reading"],
   });
+
+  const { data: readingSessionsToday = [] } = useQuery<ReadingSession[]>({
+    queryKey: ["/api/reading-sessions", toLocalDateString(currentDate)],
+    queryFn: () => {
+      const today = toLocalDateString(currentDate);
+      return fetch(`/api/reading-sessions?date=${today}`).then(res => res.json());
+    }
+  });
+
+  const readTodayBookIds = new Set(readingSessionsToday.map(s => s.bookId));
 
   const { data: completedBooks = [] } = useQuery<Book[]>({
     queryKey: ["/api/books/status/completed", toLocalDateString(startDate), toLocalDateString(endDate)],
@@ -166,6 +176,7 @@ export default function Home() {
                   onEditModeToggle={handleEditModeToggle}
                   onClick={handleBookClick}
                   status="reading"
+                  isReadToday={readTodayBookIds.has(book.id)}
                 />
               ))}
             </div>

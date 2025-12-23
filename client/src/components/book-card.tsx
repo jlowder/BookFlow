@@ -15,10 +15,10 @@ interface BookCardProps {
   onEditModeToggle?: (bookId: number) => void;
   onClick?: (book: Book) => void;
   status: "reading" | "completed";
+  isReadToday?: boolean;
 }
 
-export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status }: BookCardProps) {
-  const [isMarked, setIsMarked] = useState(false);
+export default function BookCard({ book, isEditMode = false, onEditModeToggle, onClick, status, isReadToday = false }: BookCardProps) {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const { toast } = useToast();
@@ -42,10 +42,8 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
         description: `Marked progress for "${book.title}"`,
       });
       
-      // Reset after 2 seconds
-      setTimeout(() => setIsMarked(false), 2000);
-      
-      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      const today = toLocalDateString(new Date());
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions", today] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
     onError: () => {
@@ -155,11 +153,15 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
                   size="sm"
                   variant="outline"
                   onClick={(e) => { e.stopPropagation(); markReadMutation.mutate(); }}
-                  disabled={markReadMutation.isPending || isMarked}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 hover:bg-gray-200 bg-[#dcfce7]"
+                  disabled={markReadMutation.isPending || isReadToday}
+                  className={`inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border border-input hover:text-accent-foreground h-9 rounded-md px-3 text-xs transition-colors duration-200 ${
+                    isReadToday
+                      ? 'bg-green-100 hover:bg-green-200 border-green-200 text-green-800'
+                      : 'hover:bg-gray-100 bg-white'
+                  }`}
                 >
-                  <Check className="w-3 h-3 mr-1" />
-                  {isMarked ? 'Recorded!' : 'Read Today'}
+                  {isReadToday && <Check className="w-4 h-4" />}
+                  Read Today
                 </Button>
 
                 <div className="flex space-x-1">
