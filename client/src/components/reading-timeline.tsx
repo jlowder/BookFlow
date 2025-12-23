@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
@@ -435,8 +436,17 @@ export default function ReadingTimeline({
                 {/* Grid Interaction Hints */}
                 {yearlyGridData && yearlyGridData.length > 0 && (
                   <div className="flex items-center justify-center mt-4 text-xs text-gray-600 dark:text-gray-400">
-                    <Info className="w-4 h-4 mr-2" />
-                    <span>Each square represents a day • Multiple colors show different books read</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Info className="w-4 h-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Each square represents a day</p>
+                          <p>Multiple colors show different books read</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 )}
               </div>
@@ -486,8 +496,17 @@ export default function ReadingTimeline({
 
                 {/* Timeline Interaction Hints */}
                 <div className="flex items-center justify-center mt-6 text-xs text-gray-600 dark:text-gray-400">
-                  <Info className="w-4 h-4 mr-2" />
-                  <span>Darker sections indicate reading days • Lighter sections show gaps</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="w-4 h-4" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Darker sections indicate reading days</p>
+                        <p>Lighter sections show gaps</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             )}
