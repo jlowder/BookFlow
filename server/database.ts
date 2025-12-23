@@ -80,8 +80,8 @@ export class SQLiteStorage implements IStorage {
     // Use provided startDate if available, otherwise fall back to UTC date
     const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];
     const stmt = this.db.prepare(`
-      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, completedDate, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
@@ -93,6 +93,7 @@ export class SQLiteStorage implements IStorage {
       insertBook.currentPage || null,
       insertBook.status || 'reading',
       startDate,
+      insertBook.completedDate || null,
       insertBook.notes || null
     );
 

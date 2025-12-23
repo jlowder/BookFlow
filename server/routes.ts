@@ -287,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import data from CSV
   app.post("/api/import/csv", async (req, res) => {
     try {
-      const csvData = req.body.csvData;
+      const { csvData } = req.body;
       if (!csvData) {
         return res.status(400).json({ error: "CSV data is required" });
       }
@@ -298,103 +298,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Parse CSV
-      parse(csvData, {
+      const records = parse(csvData, {
         columns: true,
         skip_empty_lines: true
-      }, async (err, records) => {
-        if (err) {
-          return res.status(400).json({ error: "Invalid CSV format" });
-        }
+      });
 
-        try {
-          const processedBooks = new Map();
-          
-          // Process records
-          for (const record of records as any[]) {
-            const type = record.Type;
-            const bookId = parseInt(record.BookId);
-            
-            // Process book data if not already processed
-            if (!processedBooks.has(bookId)) {
-              try {
-                const bookData = {
-                  title: record.Title,
-                  author: record.Author,
-                  color: record.Color,
-                  coverUrl: record.CoverUrl || null,
-                  totalPages: record.TotalPages ? parseInt(record.TotalPages) : null,
-                  currentPage: record.CurrentPage ? parseInt(record.CurrentPage) : null,
-                  status: record.Status as "reading" | "completed" | "paused",
-                  startDate: record.StartDate || null,
-                  completedDate: record.CompletedDate || null,
-                  notes: record.Notes || null
-                };
+      const processedBooks = new Map();
 
-                // Check if book already exists
-                const existingBooks = await storage.getBooks();
-                const existingBook = existingBooks.find(b => 
-                  b.title === bookData.title && b.author === bookData.author
-                );
+      // Process records
+      for await (const record of records) {
+        const type = record.Type;
+        const bookId = parseInt(record.BookId);
 
-                if (existingBook) {
-                  // Update existing book
-                  await storage.updateBook(existingBook.id, bookData);
-                  processedBooks.set(bookId, existingBook.id);
-                  results.books.updated++;
-                } else {
-                  // Create new book
-                  const newBook = await storage.createBook(bookData);
-                  processedBooks.set(bookId, newBook.id);
-                  results.books.created++;
-                }
-              } catch (error) {
-                console.error('Error processing book:', error);
-                results.books.errors++;
-              }
+        // Process book data if not already processed
+        if (!processedBooks.has(bookId)) {
+          try {
+            const bookData = {
+              title: record.Title,
+              author: record.Author,
+              color: record.Color,
+              coverUrl: record.CoverUrl || null,
+              totalPages: record.TotalPages ? parseInt(record.TotalPages) : null,
+              currentPage: record.CurrentPage ? parseInt(record.CurrentPage) : null,
+              status: record.Status as "reading" | "completed" | "paused",
+              startDate: record.StartDate || null,
+              completedDate: record.CompletedDate || null,
+              notes: record.Notes || null
+            };
+
+            // Check if book already exists
+            const existingBooks = await storage.getBooks();
+            const existingBook = existingBooks.find(b =>
+              b.title === bookData.title && b.author === bookData.author
+            );
+
+            if (existingBook) {
+              // Update existing book
+              await storage.updateBook(existingBook.id, bookData);
+              processedBooks.set(bookId, existingBook.id);
+              results.books.updated++;
+            } else {
+              // Create new book
+              const newBook = await storage.createBook(bookData);
+              processedBooks.set(bookId, newBook.id);
+              results.books.created++;
             }
-
-            // Process session data if present
-            if (type === 'book_with_session' && record.SessionDate) {
-              try {
-                const realBookId = processedBooks.get(bookId);
-                if (realBookId) {
-                  const sessionData = {
-                    bookId: realBookId,
-                    date: record.SessionDate,
-                    pagesRead: record.PagesRead ? parseInt(record.PagesRead) : null,
-                    duration: record.Duration ? parseInt(record.Duration) : null,
-                    notes: record.SessionNotes || null
-                  };
-
-                  // Check if session already exists
-                  const existingSessions = await storage.getAllReadingSessions();
-                  const existingSession = existingSessions.find(s => 
-                    s.bookId === realBookId && s.date === sessionData.date
-                  );
-
-                  if (!existingSession) {
-                    await storage.createReadingSession(sessionData);
-                    results.sessions.created++;
-                  }
-                }
-              } catch (error) {
-                console.error('Error processing session:', error);
-                results.sessions.errors++;
-              }
-            }
+          } catch (error) {
+            console.error('Error processing book:', error);
+            results.books.errors++;
           }
-
-          res.json({ 
-            message: "Import completed", 
-            results 
-          });
-        } catch (error) {
-          console.error('Import error:', error);
-          res.status(500).json({ error: "Failed to import data" });
         }
+
+        // Process session data if present
+        if (type === 'book_with_session' && record.SessionDate) {
+          try {
+            const realBookId = processedBooks.get(bookId);
+            if (realBookId) {
+              const sessionData = {
+                bookId: realBookId,
+                date: record.SessionDate,
+                pagesRead: record.PagesRead ? parseInt(record.PagesRead) : null,
+                duration: record.Duration ? parseInt(record.Duration) : null,
+                notes: record.SessionNotes || null
+              };
+
+              // Check if session already exists
+              const existingSessions = await storage.getAllReadingSessions();
+              const existingSession = existingSessions.find(s =>
+                s.bookId === realBookId && s.date === sessionData.date
+              );
+
+              if (!existingSession) {
+                await storage.createReadingSession(sessionData);
+                results.sessions.created++;
+              }
+            }
+          } catch (error) {
+            console.error('Error processing session:', error);
+            results.sessions.errors++;
+          }
+        }
+      }
+
+      res.json({
+        message: "Import completed",
+        results
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to process import" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid book data", details: error.errors });
+      }
+      console.error('Import error:', error);
+      res.status(500).json({ error: "Failed to import data" });
     }
   });
 

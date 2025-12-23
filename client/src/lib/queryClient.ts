@@ -11,7 +11,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
-): Promise<Response> {
+): Promise<any> {
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -21,7 +21,7 @@ export async function apiRequest(
 
   await throwIfResNotOk(res);
   if (res.status === 204) {
-    return;
+    return undefined;
   }
   return res.json();
 }
