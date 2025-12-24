@@ -16,6 +16,7 @@ interface ReadingTimelineProps {
   onTimeRangeChange: (value: string) => void;
   startDate: Date;
   endDate: Date;
+  canShowGridView: boolean;
 }
 
 export default function ReadingTimeline({
@@ -24,7 +25,8 @@ export default function ReadingTimeline({
   timeRange,
   onTimeRangeChange,
   startDate,
-  endDate
+  endDate,
+  canShowGridView,
 }: ReadingTimelineProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,7 +94,7 @@ export default function ReadingTimeline({
 
   // For grid view, we need to fetch data from the Sunday before the start date
   // to ensure the first week's padding days have session data
-  const shouldUseGridView = timeRange === 'all' || parseInt(timeRange) > 30;
+  const shouldUseGridView = canShowGridView && (timeRange === 'all' || parseInt(timeRange) > 30);
   const fetchStartDate = shouldUseGridView 
     ? (() => {
         const gridStart = new Date(startDate);
@@ -324,20 +326,22 @@ export default function ReadingTimeline({
   const yearlyGridData = generateGridData();
 
   return (
-    <section className="mb-12">
+    <section className="mb-12" data-testid="reading-timeline-section">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-primary">Reading Timeline</h2>
-        <Select value={timeRange} onValueChange={onTimeRangeChange}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="30">Last 30 days</SelectItem>
-            <SelectItem value="365">12 months</SelectItem>
-            <SelectItem value="730">24 months</SelectItem>
-            <SelectItem value="all">All time</SelectItem>
-          </SelectContent>
-        </Select>
+        {canShowGridView && (
+          <Select value={timeRange} onValueChange={onTimeRangeChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="365">12 months</SelectItem>
+              <SelectItem value="730">24 months</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <Card>
@@ -361,7 +365,7 @@ export default function ReadingTimeline({
           <div className="relative">
             {shouldUseGridView ? (
               /* GitHub-style Grid View */
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center" data-testid="grid-view">
                 {yearlyGridData && yearlyGridData.length > 0 ? (
                   yearlyGridData.map(({ year, weeks, monthLabels }) => (
                     <div key={year} className="mb-8 last:mb-0">
@@ -452,7 +456,7 @@ export default function ReadingTimeline({
               </div>
             ) : (
               /* Original Ribbon View */
-              <div>
+              <div data-testid="ribbon-view">
                 {/* Date Labels */}
                 <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
                   {getDateLabels().map((label, i) => (

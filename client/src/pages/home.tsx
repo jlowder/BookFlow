@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
+import { useElementWidth } from "@/hooks/use-element-width";
+import { usePrevious } from "@/hooks/use-previous";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
@@ -12,6 +14,8 @@ import BookDetailsModal from "@/components/book-details-modal";
 import { toLocalDateString } from "@/lib/date-utils";
 import { apiRequest } from "@/lib/queryClient";
 
+const GRID_VIEW_MIN_WIDTH = 960; // min px width to render the grid view
+
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
@@ -19,6 +23,22 @@ export default function Home() {
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [timeRange, setTimeRange] = useState("30");
   const currentDate = useCurrentDate();
+
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useElementWidth(timelineContainerRef);
+  const canShowGridView = containerWidth >= GRID_VIEW_MIN_WIDTH;
+  const prevCanShowGridView = usePrevious(canShowGridView);
+
+  // This effect handles the automatic transition from mobile to desktop view.
+  // When the container becomes wide enough, it switches from the default 30-day
+  // ribbon to the 12-month grid. This should only run on this specific transition,
+  // not on every render, to allow the user to manually select the 30-day view
+  // on desktop without being overridden.
+  useEffect(() => {
+    if (canShowGridView && !prevCanShowGridView) {
+      setTimeRange("365");
+    }
+  }, [canShowGridView, prevCanShowGridView]);
 
   const getDateRange = () => {
     const endDate = new Date(currentDate);
@@ -201,14 +221,17 @@ export default function Home() {
         </section>
 
         {/* Reading Timeline */}
-        <ReadingTimeline 
-          editModeBookId={editModeBookId}
-          onEditModeToggle={handleEditModeToggle}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
-          startDate={startDate}
-          endDate={endDate}
-        />
+        <div ref={timelineContainerRef}>
+          <ReadingTimeline
+            editModeBookId={editModeBookId}
+            onEditModeToggle={handleEditModeToggle}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+            startDate={startDate}
+            endDate={endDate}
+            canShowGridView={canShowGridView}
+          />
+        </div>
 
         {/* Completed Books */}
         <section>
