@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Check } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useIsMobile } from "@/hooks/use-is-mobile";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -17,6 +16,7 @@ interface ReadingTimelineProps {
   onTimeRangeChange: (value: string) => void;
   startDate: Date;
   endDate: Date;
+  canShowGridView: boolean;
 }
 
 export default function ReadingTimeline({
@@ -25,17 +25,32 @@ export default function ReadingTimeline({
   timeRange,
   onTimeRangeChange,
   startDate,
-  endDate
+  endDate,
+  canShowGridView,
 }: ReadingTimelineProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
 
   // Force cache invalidation on mount and time range changes to ensure fresh data
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
     queryClient.invalidateQueries({ queryKey: ["/api/books"] });
   }, [queryClient, timeRange]);
+
+  // When the view mode changes, adjust the time range if necessary
+  useEffect(() => {
+    // If we can show the grid view and the user is on the default mobile view,
+    // switch to a longer time range that uses the grid.
+    if (canShowGridView && timeRange === '30') {
+      onTimeRangeChange('365');
+    }
+
+    // If we can no longer show the grid view, switch back to the mobile-friendly
+    // ribbon view.
+    if (!canShowGridView) {
+      onTimeRangeChange('30');
+    }
+  }, [canShowGridView, timeRange, onTimeRangeChange]);
 
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
@@ -94,7 +109,7 @@ export default function ReadingTimeline({
 
   // For grid view, we need to fetch data from the Sunday before the start date
   // to ensure the first week's padding days have session data
-  const shouldUseGridView = timeRange === 'all' || parseInt(timeRange) > 30;
+  const shouldUseGridView = canShowGridView && (timeRange === 'all' || parseInt(timeRange) > 30);
   const fetchStartDate = shouldUseGridView 
     ? (() => {
         const gridStart = new Date(startDate);
@@ -326,10 +341,10 @@ export default function ReadingTimeline({
   const yearlyGridData = generateGridData();
 
   return (
-    <section className="mb-12">
+    <section className="mb-12" data-testid="reading-timeline-section">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-primary">Reading Timeline</h2>
-        {!isMobile && (
+        {canShowGridView && (
           <Select value={timeRange} onValueChange={onTimeRangeChange}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -365,7 +380,7 @@ export default function ReadingTimeline({
           <div className="relative">
             {shouldUseGridView ? (
               /* GitHub-style Grid View */
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center" data-testid="grid-view">
                 {yearlyGridData && yearlyGridData.length > 0 ? (
                   yearlyGridData.map(({ year, weeks, monthLabels }) => (
                     <div key={year} className="mb-8 last:mb-0">
@@ -456,7 +471,7 @@ export default function ReadingTimeline({
               </div>
             ) : (
               /* Original Ribbon View */
-              <div>
+              <div data-testid="ribbon-view">
                 {/* Date Labels */}
                 <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
                   {getDateLabels().map((label, i) => (

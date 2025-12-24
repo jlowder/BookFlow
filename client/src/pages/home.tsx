@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useElementWidth } from "@/hooks/use-element-width";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
@@ -13,6 +13,8 @@ import BookDetailsModal from "@/components/book-details-modal";
 import { toLocalDateString } from "@/lib/date-utils";
 import { apiRequest } from "@/lib/queryClient";
 
+const GRID_VIEW_MIN_WIDTH = 960; // min px width to render the grid view
+
 export default function Home() {
   const [isAddBookModalOpen, setIsAddBookModalOpen] = useState(false);
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
@@ -20,10 +22,19 @@ export default function Home() {
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [timeRange, setTimeRange] = useState("30");
   const currentDate = useCurrentDate();
-  const isMobile = useIsMobile();
+
+  const timelineContainerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useElementWidth(timelineContainerRef);
+  const canShowGridView = containerWidth >= GRID_VIEW_MIN_WIDTH;
+
+  useEffect(() => {
+    if (!canShowGridView) {
+      setTimeRange("30");
+    }
+  }, [canShowGridView]);
 
   const getDateRange = () => {
-    const effectiveTimeRange = isMobile ? "30" : timeRange;
+    const effectiveTimeRange = canShowGridView ? timeRange : "30";
     const endDate = new Date(currentDate);
     const startDate = new Date(currentDate);
 
@@ -204,14 +215,17 @@ export default function Home() {
         </section>
 
         {/* Reading Timeline */}
-        <ReadingTimeline 
-          editModeBookId={editModeBookId}
-          onEditModeToggle={handleEditModeToggle}
-          timeRange={isMobile ? "30" : timeRange}
-          onTimeRangeChange={setTimeRange}
-          startDate={startDate}
-          endDate={endDate}
-        />
+        <div ref={timelineContainerRef}>
+          <ReadingTimeline
+            editModeBookId={editModeBookId}
+            onEditModeToggle={handleEditModeToggle}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+            startDate={startDate}
+            endDate={endDate}
+            canShowGridView={canShowGridView}
+          />
+        </div>
 
         {/* Completed Books */}
         <section>
