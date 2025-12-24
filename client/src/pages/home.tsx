@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "../hooks/use-current-date";
 import { useElementWidth } from "@/hooks/use-element-width";
+import { usePrevious } from "@/hooks/use-previous";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
@@ -26,22 +27,27 @@ export default function Home() {
   const timelineContainerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useElementWidth(timelineContainerRef);
   const canShowGridView = containerWidth >= GRID_VIEW_MIN_WIDTH;
+  const prevCanShowGridView = usePrevious(canShowGridView);
 
+  // This effect handles the automatic transition from mobile to desktop view.
+  // When the container becomes wide enough, it switches from the default 30-day
+  // ribbon to the 12-month grid. This should only run on this specific transition,
+  // not on every render, to allow the user to manually select the 30-day view
+  // on desktop without being overridden.
   useEffect(() => {
-    if (!canShowGridView) {
-      setTimeRange("30");
+    if (canShowGridView && !prevCanShowGridView) {
+      setTimeRange("365");
     }
-  }, [canShowGridView]);
+  }, [canShowGridView, prevCanShowGridView]);
 
   const getDateRange = () => {
-    const effectiveTimeRange = canShowGridView ? timeRange : "30";
     const endDate = new Date(currentDate);
     const startDate = new Date(currentDate);
 
-    if (effectiveTimeRange === "all") {
+    if (timeRange === "all") {
       startDate.setFullYear(1970, 0, 1);
     } else {
-      const days = parseInt(effectiveTimeRange);
+      const days = parseInt(timeRange);
       startDate.setDate(endDate.getDate() - days);
     }
 

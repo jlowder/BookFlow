@@ -72,7 +72,7 @@ test.describe('Reading Timeline Component', () => {
   });
 
   test('should show selector and grid on foldable mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 912 }); // Use a width > 960px
+    await page.setViewportSize({ width: 1024, height: 912 });
     await page.goto('http://localhost:5000/');
     await page.waitForTimeout(500);
 
@@ -97,5 +97,27 @@ test.describe('Reading Timeline Component', () => {
     await expect(timeline.getByTestId('ribbon-view')).toBeHidden();
 
     await page.screenshot({ path: '/home/jules/verification/desktop_view.png' });
+  });
+
+  test('should allow selecting 30-day ribbon view on desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('http://localhost:5000/');
+    await page.waitForTimeout(500); // Wait for initial render and auto-switch to grid
+
+    const timeline = page.getByTestId('reading-timeline-section');
+
+    // The view should initially be the grid view
+    await expect(timeline.getByTestId('grid-view')).toBeVisible();
+    await expect(timeline.getByTestId('ribbon-view')).toBeHidden();
+
+    // Find the selector and choose the "Last 30 days" option
+    await timeline.getByRole('combobox').click();
+    await page.getByRole('option', { name: 'Last 30 days' }).click();
+
+    // The view should now switch to the ribbon view
+    await expect(timeline.getByTestId('ribbon-view')).toBeVisible();
+    await expect(timeline.getByTestId('grid-view')).toBeHidden();
+
+    await page.screenshot({ path: '/home/jules/verification/desktop_ribbon_view.png' });
   });
 });

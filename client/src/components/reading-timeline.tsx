@@ -37,21 +37,6 @@ export default function ReadingTimeline({
     queryClient.invalidateQueries({ queryKey: ["/api/books"] });
   }, [queryClient, timeRange]);
 
-  // When the view mode changes, adjust the time range if necessary
-  useEffect(() => {
-    // If we can show the grid view and the user is on the default mobile view,
-    // switch to a longer time range that uses the grid.
-    if (canShowGridView && timeRange === '30') {
-      onTimeRangeChange('365');
-    }
-
-    // If we can no longer show the grid view, switch back to the mobile-friendly
-    // ribbon view.
-    if (!canShowGridView) {
-      onTimeRangeChange('30');
-    }
-  }, [canShowGridView, timeRange, onTimeRangeChange]);
-
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
   });
