@@ -30,15 +30,6 @@ docker run -d --restart always -d -p 3000:3000 -v bookflow_data:/app/data ghcr.i
 ```
 
 Then, browse to localhost:3000, or whatever port you chose. The app will be installed permanently; that is, it will persist through reboots.
-To uninstall it, you can just use `docker stop` and `docker rm` commands to stop the container and remove the cached bookflow image.
-
-To check for new updates, you can run:
-
-```sh
-docker pull ghcr.io/jlowder/bookflow/bookflow:latest
-```
-
-If a new image downloaded, stop the current container (`docker stop <container-name>`), remove it (`docker rm <container-name>`), and run the new image (`docker run -d --restart always -d -p 3000:3000 -v bookflow_data:/app/data ghcr.io/jlowder/bookflow/bookflow:latest`).
 
 ## Manual Installation
 
@@ -56,6 +47,14 @@ If a new image downloaded, stop the current container (`docker stop <container-n
    ```sh
    docker-compose up -d
    ```
+
+## Usage
+
+*Add your current reads to get started.* Search for a title or author and select your book to create a card. Click any card to add personal notes or customize the color used in your timeline view.
+
+Each day that you read something, click the "Read Today" button. That's pretty much it! You can mark a book complete by clicking the "Complete" checkmark in the
+card (the rightmost button). If you need to edit the timeline, switch to the grid (12-month) view and click the Edit icon (center button in the card). Then,
+click any day in the grid to toggle the reading state for that day. Click the Edit icon again when you are done making edits.
 
 ## License
 
