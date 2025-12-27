@@ -22,7 +22,7 @@ jobs:
       - name: Set tag
         id: set_tag
         run: |
-          LOWER_REPO=$(echo "${{ github.repository }}" | tr '[:upper]' '[:lower:]')
+          LOWER_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           TAG="ghcr.io/$LOWER_REPO/bookflow:latest"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
