@@ -27,7 +27,7 @@ Then, browse to localhost:3000, or whatever port you chose. The app will be inst
    ```sh
    git clone https://github.com/jlowder/BookFlow.git
    ```
-2. Navigate to the project directory:
+2. Build the project directory:
    ```sh
    cd BookFlow
    npm install
