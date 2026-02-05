@@ -222,9 +222,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         console.error('Google Books API error:', errorData);
-        return res.status(response.status).json({
-          error: "Google Books API error",
-          details: errorData
+        return res.status(response.status).json({ 
+          error: "Google Books API error", 
+          details: errorData 
         });
       }
 

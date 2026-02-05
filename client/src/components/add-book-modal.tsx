@@ -171,8 +171,8 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       className="flex-1"
                     />
-                    <Button
-                      onClick={handleSearch}
+                    <Button 
+                      onClick={handleSearch} 
                       disabled={isSearching || !searchQuery.trim()}
                       size="sm"
                     >
@@ -186,20 +186,20 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     <Label className="text-sm font-medium">Search Results</Label>
                     {searchResults.map((book) => (
-                      <div
+                      <div 
                         key={book.id}
                         className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedBook?.id === book.id
-                            ? 'border-blue-500 bg-blue-50'
+                          selectedBook?.id === book.id 
+                            ? 'border-blue-500 bg-blue-50' 
                             : 'border-gray-200 hover:bg-gray-50'
                         }`}
                         onClick={() => setSelectedBook(book)}
                       >
                         <div className="flex space-x-3">
-                          <img
-                            src={book.volumeInfo.imageLinks?.thumbnail || book.volumeInfo.imageLinks?.smallThumbnail || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=300"}
+                          <img 
+                            src={book.volumeInfo.imageLinks?.thumbnail || book.volumeInfo.imageLinks?.smallThumbnail || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=300"} 
                             alt={book.volumeInfo.title}
-                            className="w-12 h-16 object-cover rounded"
+                            className="w-12 h-16 object-cover rounded" 
                           />
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-gray-900 text-sm leading-tight">
@@ -228,13 +228,13 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                 {((searchQuery && searchResults.length === 0 && !isSearching && searchMutation.isSuccess) || searchMutation.isError) && (
                   <div className="text-center py-4">
                     <p className="text-sm text-secondary mb-2">
-                      {searchMutation.isError
-                        ? "Search failed due to API limits."
+                      {searchMutation.isError 
+                        ? "Search failed due to API limits." 
                         : "No books found. Try a different search term."}
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
                       onClick={() => setIsManual(true)}
                     >
                       Add Book Manually
@@ -244,9 +244,9 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
                 {!isSearching && searchResults.length === 0 && !searchMutation.isSuccess && !searchMutation.isError && (
                    <div className="text-center py-4">
-                     <Button
-                       variant="ghost"
-                       size="sm"
+                     <Button 
+                       variant="ghost" 
+                       size="sm" 
                        onClick={() => setIsManual(true)}
                        className="text-muted-foreground"
                      >
@@ -259,20 +259,20 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <Label className="text-sm font-medium">Manual Entry</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
                     onClick={() => setIsManual(false)}
                     className="h-7 text-xs"
                   >
                     Back to Search
                   </Button>
                 </div>
-
+                
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="title" className="text-xs">Title *</Label>
-                    <Input
+                    <Input 
                       id="title"
                       value={manualBook.title}
                       onChange={(e) => setManualBook(prev => ({ ...prev, title: e.target.value }))}
@@ -281,7 +281,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   </div>
                   <div>
                     <Label htmlFor="author" className="text-xs">Author *</Label>
-                    <Input
+                    <Input 
                       id="author"
                       value={manualBook.author}
                       onChange={(e) => setManualBook(prev => ({ ...prev, author: e.target.value }))}
@@ -291,7 +291,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor="pages" className="text-xs">Total Pages</Label>
-                      <Input
+                      <Input 
                         id="pages"
                         type="number"
                         value={manualBook.totalPages}
@@ -301,7 +301,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                     </div>
                     <div>
                       <Label htmlFor="cover" className="text-xs">Cover URL (optional)</Label>
-                      <Input
+                      <Input 
                         id="cover"
                         value={manualBook.coverUrl}
                         onChange={(e) => setManualBook(prev => ({ ...prev, coverUrl: e.target.value }))}
