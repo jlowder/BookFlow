@@ -218,10 +218,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10`);
-      const data = await response.json();
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Google Books API error:', errorData);
+        return res.status(response.status).json({
+          error: "Google Books API error",
+          details: errorData
+        });
+      }
+
+      const data = await response.json();
       res.json(data);
     } catch (error) {
+      console.error('Search error:', error);
       res.status(500).json({ error: "Failed to search books" });
     }
   });
