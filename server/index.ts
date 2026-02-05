@@ -56,10 +56,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use PORT environment variable in production, default to 5000 in development
-  const port = process.env.NODE_ENV === "production" 
-    ? parseInt(process.env.PORT || "3000", 10)
-    : 5000;
+  // Use PORT environment variable if provided, default based on NODE_ENV
+  const port = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "3000" : "5000"), 10);
   server.listen({
     port,
     host: "0.0.0.0",
