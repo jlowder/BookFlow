@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /opt/BookFlow:/app/data
+      - bookflow_data:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -16,3 +16,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  bookflow_data:
+    name: bookflow_data
