@@ -221,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Google Books API error:', errorData);
+        console.error(`Google Books API error for query "${q}":`, response.status, JSON.stringify(errorData));
         return res.status(response.status).json({ 
           error: "Google Books API error", 
           details: errorData 
@@ -229,6 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
+      if (!data.items || data.items.length === 0) {
+        console.log(`No results found for query "${q}"`);
+      }
       res.json(data);
     } catch (error) {
       console.error('Search error:', error);
