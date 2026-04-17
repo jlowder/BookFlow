@@ -159,7 +159,20 @@ function BookDetails({ book }: { book: Book }) {
               )}
             </div>
 
+            <div className="flex items-center gap-2">
+              {book.publicationDate && !isNaN(new Date(book.publicationDate).getTime()) ? (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Published: {new Date(book.publicationDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              ) : book.publicationDate === null ? (
+                <span className="text-sm text-gray-400 italic">No publication date</span>
+              ) : null}
+            </div>
+
             <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+              {book.publicationDate && !isNaN(new Date(book.publicationDate).getTime()) && (
+                <span>Published: {new Date(book.publicationDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              )}
               {book.startDate && !isNaN(new Date(book.startDate).getTime()) && (
                 <span>Started: {new Date(book.startDate + 'T00:00:00').toLocaleDateString()}</span>
               )}

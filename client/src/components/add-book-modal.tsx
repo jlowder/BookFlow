@@ -25,7 +25,8 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
     title: "",
     author: "",
     totalPages: "",
-    coverUrl: ""
+    coverUrl: "",
+    publicationDate: ""
   });
   
   const { toast } = useToast();
@@ -102,6 +103,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
         currentPage: 0,
         status: "reading" as const,
         startDate: toLocalDateString(new Date()),
+        publicationDate: manualBook.publicationDate || null,
       };
     } else {
       if (!selectedBook) return;
@@ -113,6 +115,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
         currentPage: 0,
         status: "reading" as const,
         startDate: toLocalDateString(new Date()),
+        publicationDate: selectedBook.volumeInfo.publishedDate?.split('T')[0] || null,
       };
     }
 
@@ -129,7 +132,8 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
       title: "",
       author: "",
       totalPages: "",
-      coverUrl: ""
+      coverUrl: "",
+      publicationDate: ""
     });
   };
 
@@ -308,6 +312,16 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                         placeholder="https://..."
                       />
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="publicationDate" className="text-xs">Publication Date (optional)</Label>
+                    <Input 
+                      id="publicationDate"
+                      type="date"
+                      value={manualBook.publicationDate}
+                      onChange={(e) => setManualBook(prev => ({ ...prev, publicationDate: e.target.value }))}
+                      placeholder="e.g. 2024-01-15"
+                    />
                   </div>
                 </div>
               </div>

@@ -250,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add header row
       csvData.push([
         'Type', 'BookId', 'Title', 'Author', 'Color', 'CoverUrl', 'TotalPages', 
-        'CurrentPage', 'Status', 'StartDate', 'CompletedDate', 'Notes',
+        'CurrentPage', 'Status', 'StartDate', 'CompletedDate', 'PublicationDate', 'Notes',
         'SessionId', 'SessionDate', 'PagesRead', 'Duration', 'SessionNotes'
       ]);
 
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             csvData.push([
               'book_with_session', book.id, book.title, book.author, book.color,
               book.coverUrl || '', book.totalPages || '', book.currentPage || '',
-              book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+              book.status, book.startDate || '', book.completedDate || '', book.publicationDate || '', book.notes || '',
               session.id, session.date, session.pagesRead || '', session.duration || '', session.notes || ''
             ]);
           }
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           csvData.push([
             'book_only', book.id, book.title, book.author, book.color,
             book.coverUrl || '', book.totalPages || '', book.currentPage || '',
-            book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+            book.status, book.startDate || '', book.completedDate || '', book.publicationDate || '', book.notes || '',
             '', '', '', '', ''
           ]);
         }
@@ -333,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: record.Status as "reading" | "completed" | "paused",
               startDate: record.StartDate || null,
               completedDate: record.CompletedDate || null,
+              publicationDate: record.PublicationDate || null,
               notes: record.Notes || null
             };
 
