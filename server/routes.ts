@@ -217,22 +217,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter 'q' is required" });
       }
 
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10&country=US`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error(`Google Books API error for query "${q}":`, response.status, JSON.stringify(errorData));
-        return res.status(response.status).json({ 
-          error: "Google Books API error", 
-          details: errorData 
-        });
+      const maxRetries = 3;
+      let lastError = null;
+      let attempt = 0;
+
+      while (attempt < maxRetries) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+
+          const response = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10&country=US&projection=lite`,
+            {
+              signal: controller.signal,
+              headers: {
+                'User-Agent': 'BookFlow/1.0 (https://github.com/jlowder/BookFlow)'
+              }
+            }
+          );
+
+          clearTimeout(timeout);
+
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.items || data.items.length === 0) {
+              console.log(`No results found for query "${q}"`);
+            }
+            return res.json(data);
+          }
+
+          const errorData = await response.json().catch(() => ({}));
+          lastError = { status: response.status, data: errorData };
+
+          // Retry on 5xx or 429
+          if (response.status >= 500 || response.status === 429) {
+            console.warn(`Google Books API attempt ${attempt + 1} failed for "${q}":`, response.status);
+            attempt++;
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+              continue;
+            }
+          } else {
+            // Don't retry on other 4xx errors
+            break;
+          }
+        } catch (error: any) {
+          lastError = { status: 500, data: { message: error.message } };
+          console.warn(`Google Books API fetch attempt ${attempt + 1} error for "${q}":`, error.message);
+          attempt++;
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            continue;
+          }
+        }
       }
 
-      const data = await response.json();
-      if (!data.items || data.items.length === 0) {
-        console.log(`No results found for query "${q}"`);
-      }
-      res.json(data);
+      console.error(`Google Books API final failure for query "${q}":`, lastError?.status, JSON.stringify(lastError?.data));
+      res.status(lastError?.status || 500).json({
+        error: "Google Books API error",
+        details: lastError?.data
+      });
     } catch (error) {
       console.error('Search error:', error);
       res.status(500).json({ error: "Failed to search books" });
