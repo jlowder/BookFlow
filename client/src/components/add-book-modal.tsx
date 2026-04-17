@@ -37,7 +37,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
       const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Search failed");
+        throw new Error(errorData.details?.message || errorData.details?.error?.message || errorData.error || "Search failed");
       }
       const data = await response.json();
       return data.items || [];
