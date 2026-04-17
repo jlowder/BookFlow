@@ -35,7 +35,10 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
       const response = await fetch(`/api/books/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error("Search failed");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Search failed");
+      }
       const data = await response.json();
       return data.items || [];
     },
@@ -43,10 +46,10 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
       setSearchResults(results);
       setIsSearching(false);
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Search Error",
-        description: "Failed to search for books. Please try again.",
+        description: error.message || "Failed to search for books. Please try again.",
         variant: "destructive",
       });
       setIsSearching(false);
@@ -146,12 +149,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md w-full max-h-[90vh] overflow-hidden" aria-describedby="add-book-description">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            Add New Book
-            <Button variant="ghost" size="sm" onClick={handleClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Add New Book</DialogTitle>
         </DialogHeader>
         <div id="add-book-description" className="sr-only">
           Search for and add books to your reading list using the Google Books database

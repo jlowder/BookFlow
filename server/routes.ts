@@ -251,10 +251,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Retry on 5xx or 429
           if (response.status >= 500 || response.status === 429) {
-            console.warn(`Google Books API attempt ${attempt + 1} failed for "${q}":`, response.status);
+            const delay = Math.pow(2, attempt) * 1000;
+            console.warn(`Google Books API attempt ${attempt + 1} failed for "${q}" with status ${response.status}. Retrying in ${delay}ms...`);
             attempt++;
             if (attempt < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+              await new Promise(resolve => setTimeout(resolve, delay));
               continue;
             }
           } else {
