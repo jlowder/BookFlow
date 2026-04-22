@@ -1,6 +1,13 @@
 # BookFlow
 
-BookFlow is a modern web-based reading journal that helps you track what you read, uncover patterns in your habits, and keep a complete history of your literary journey. With a clean, intuitive interface, it’s easy to organize your library, monitor progress, and stay motivated along the way.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Actions](https://github.com/jlowder/BookFlow/actions/workflows/publish.yml/badge.svg)](https://github.com/jlowder/BookFlow/actions/workflows/publish.yml)
+[![Docker Version](https://img.shields.io/docker/v/jlowder/bookflow?sort=semver&color=blue)](https://hub.docker.com/r/jlowder/bookflow)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jlowder/bookflow)](https://hub.docker.com/r/jlowder/bookflow)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![Playwright](https://img.shields.io/badge/Testing-Playwright-blue.svg)](https://playwright.dev/)
+
+BookFlow is a modern web-based reading journal that helps you track what you read, uncover patterns in your habits, and keep a complete history of your literary journey. With a clean, intuitive interface, it's easy to organize your library, monitor progress, and stay motivated along the way.
 
 ![BookFlow Interface](screenshot.png)
 
@@ -48,7 +55,7 @@ card (the rightmost button).
 **If you need to edit the timeline:** switch to the grid (12-month) view and click the Edit icon (center button in the card). Then,
 click any day in the grid to toggle the reading state for that day. Click the Edit icon again when you are done making edits.
 
-**Note:** On smaller screens, the app defaults to a 30-day view instead of the 12-month grid. Use your phone for quick updates—like marking books read—but switch to a desktop or tablet for full timeline edits.
+**Note:** On smaller screens, the app defaults to a 30-day view instead of the 12-month grid. Use your phone for quick updates-like marking books read-but switch to a desktop or tablet for full timeline edits.
 
 ## License
 
