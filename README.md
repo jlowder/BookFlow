@@ -2,8 +2,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Actions](https://github.com/jlowder/BookFlow/actions/workflows/publish.yml/badge.svg)](https://github.com/jlowder/BookFlow/actions/workflows/publish.yml)
-[![Docker Version](https://img.shields.io/docker/v/jlowder/bookflow?sort=semver&color=blue)](https://hub.docker.com/r/jlowder/bookflow)
-[![Docker Pulls](https://img.shields.io/docker/pulls/jlowder/bookflow)](https://hub.docker.com/r/jlowder/bookflow)
+[![Docker Version](https://img.shields.io/docker/v/jlowder/BookFlow?sort=semver&color=blue)](https://hub.docker.com/r/jlowder/BookFlow)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jlowder/BookFlow)](https://hub.docker.com/r/jlowder/BookFlow)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
 [![Playwright](https://img.shields.io/badge/Testing-Playwright-blue.svg)](https://playwright.dev/)
 
