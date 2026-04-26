@@ -4,6 +4,79 @@ import type { Book, InsertBook, ReadingSession, InsertReadingSession } from "@sh
 import type { IStorage } from './storage';
 import { toLocalDateString, parseLocalDate } from "./date-utils";
 
+// Helper function to parse partial date strings (e.g., "2023", "2023-05") as local dates
+const parsePartialDate = (dateInput: string): Date | null => {
+  const dateStr = String(dateInput).trim();
+  
+  // Try parsing YYYY format (year only)
+  const yearRegex = /^\d{4}$/;
+  if (yearRegex.test(dateStr)) {
+    const year = Number(dateStr);
+    // Handle years between 0-99 as 2000-2099 (consistent with Date constructor behavior)
+    const normalizedYear = year < 100 ? 2000 + year : year;
+    return new Date(normalizedYear, 0, 1); // January 1 of that year
+  }
+  
+  // Try parsing YYYY-MM format (year and month)
+  const yearMonthRegex = /^(\d{4})-(\d{2})$/;
+  const yearMonthMatch = dateStr.match(yearMonthRegex);
+  if (yearMonthMatch) {
+    const [, yearStr, monthStr] = yearMonthMatch;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    
+    // Validate month is in 01-12 range
+    if (month < 1 || month > 12) {
+      console.warn(`[parsePartialDate] Invalid month (${month}) in date string: "${dateStr}"`);
+      return null;
+    }
+    
+    // Handle years between 0-99 as 2000-2099 (consistent with Date constructor behavior)
+    const normalizedYear = year < 100 ? 2000 + year : year;
+    return new Date(normalizedYear, month - 1, 1); // First day of that month
+  }
+  
+  // Try parsing YYYY-MM-DD format (year, month, and day)
+  const yearMonthDayRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const yearMonthDayMatch = dateStr.match(yearMonthDayRegex);
+  if (yearMonthDayMatch) {
+    const [, yearStr, monthStr, dayStr] = yearMonthDayMatch;
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    
+    // Validate month is in 01-12 range
+    if (month < 1 || month > 12) {
+      console.warn(`[parsePartialDate] Invalid month (${month}) in date string: "${dateStr}"`);
+      return null;
+    }
+    
+    // Validate day is in 01-31 range
+    if (day < 1 || day > 31) {
+      console.warn(`[parsePartialDate] Invalid day (${day}) in date string: "${dateStr}"`);
+      return null;
+    }
+    
+    // Handle years between 0-99 as 2000-2099 (consistent with Date constructor behavior)
+    const normalizedYear = year < 100 ? 2000 + year : year;
+    
+    // Create date and validate it's a real date (handles edge cases like Feb 30)
+    const testDate = new Date(normalizedYear, month - 1, day);
+    if (
+      testDate.getFullYear() !== normalizedYear ||
+      testDate.getMonth() !== month - 1 ||
+      testDate.getDate() !== day
+    ) {
+      console.warn(`[parsePartialDate] Invalid date components in string: "${dateStr}"`);
+      return null;
+    }
+    
+    return testDate;
+  }
+  
+  return null;
+};
+
 // Helper function to validate and standardize date strings to YYYY-MM-DD format
 const standardizeDateString = (dateInput: string | Date | null | undefined): string | null => {
   // Handle null/undefined
@@ -41,7 +114,13 @@ const standardizeDateString = (dateInput: string | Date | null | undefined): str
         return dateStr;
       }
     }
-
+    
+    // Try parsing partial dates (YYYY or YYYY-MM) as local dates
+    const partialDate = parsePartialDate(dateStr);
+    if (partialDate) {
+      return toLocalDateString(partialDate);
+    }
+    
     // Try parsing ISO format or other formats with Date constructor
     const parsedDate = new Date(dateStr);
     if (!isNaN(parsedDate.getTime())) {
