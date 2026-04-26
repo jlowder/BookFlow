@@ -96,6 +96,7 @@ export class SQLiteStorage implements IStorage {
         notes TEXT
       )
     `);
+    try { this.db.exec("ALTER TABLE books ADD COLUMN publicationDate TEXT"); } catch (e) {} 
 
     // Create reading_sessions table
     this.db.exec(`
