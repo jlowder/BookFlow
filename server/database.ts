@@ -4,6 +4,28 @@ import type { Book, InsertBook, ReadingSession, InsertReadingSession } from "@sh
 import type { IStorage } from './storage';
 import { toLocalDateString, parseLocalDate } from "./date-utils";
 
+// Helper function to parse partial date strings (e.g., "2023", "2023-05") as local dates
+const parsePartialDate = (dateInput: string): Date | null => {
+  const dateStr = String(dateInput).trim();
+  
+  // Try parsing YYYY format (year only)
+  const yearRegex = /^\d{4}$/;
+  if (yearRegex.test(dateStr)) {
+    const year = Number(dateStr);
+    return new Date(year, 0, 1); // January 1 of that year
+  }
+  
+  // Try parsing YYYY-MM format (year and month)
+  const yearMonthRegex = /^(\d{4})-(\d{2})$/;
+  const yearMonthMatch = dateStr.match(yearMonthRegex);
+  if (yearMonthMatch) {
+    const [, year, month] = yearMonthMatch;
+    return new Date(Number(year), Number(month) - 1, 1); // First day of that month
+  }
+  
+  return null;
+};
+
 // Helper function to validate and standardize date strings to YYYY-MM-DD format
 const standardizeDateString = (dateInput: string | Date | null | undefined): string | null => {
   // Handle null/undefined
@@ -41,7 +63,13 @@ const standardizeDateString = (dateInput: string | Date | null | undefined): str
         return dateStr;
       }
     }
-
+    
+    // Try parsing partial dates (YYYY or YYYY-MM) as local dates
+    const partialDate = parsePartialDate(dateStr);
+    if (partialDate) {
+      return toLocalDateString(partialDate);
+    }
+    
     // Try parsing ISO format or other formats with Date constructor
     const parsedDate = new Date(dateStr);
     if (!isNaN(parsedDate.getTime())) {
