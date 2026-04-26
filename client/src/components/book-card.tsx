@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, CheckCircle, FileText, Edit } from "lucide-react";
+import { Check, CheckCircle, FileText, Edit, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -97,6 +97,33 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       toast({
         title: "Error",
         description: "Failed to mark book as completed",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const unCompleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/books/${book.id}`, {
+        status: "reading",
+        completedDate: null
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Book un-completed!",
+        description: `"${book.title}" moved back to reading`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/reading"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/status/completed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to un-complete book",
         variant: "destructive",
       });
     },
@@ -241,12 +268,25 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
               </div>
             </div>
           ) : (
-            <div className="text-sm text-gray-600">
-              {book.startDate && book.completedDate && (
-                <p>
-                  {new Date(book.startDate).toLocaleDateString()} - {new Date(book.completedDate).toLocaleDateString()}
-                </p>
-              )}
+            <div className="space-y-3">
+              <div className="text-sm text-gray-600">
+                {book.startDate && book.completedDate && (
+                  <p>
+                    {new Date(book.startDate).toLocaleDateString()} - {new Date(book.completedDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => { e.stopPropagation(); unCompleteMutation.mutate(); }}
+                  disabled={unCompleteMutation.isPending}
+                  className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-blue-100 border-blue-200 text-blue-700 bg-[#e5e7eb]"
+                >
+                  <Clock className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
