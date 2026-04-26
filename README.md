@@ -36,11 +36,11 @@ Then, browse to localhost:3000, or whatever port you chose. The app will be inst
    ```sh
    cd BookFlow
    npm install
-   docker-compose build
+   docker compose build
    ```
 4. Deploy
    ```sh
-   docker-compose up -d
+   docker compose up -d
    ```
 
 ## Usage
