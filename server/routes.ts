@@ -217,19 +217,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Query parameter 'q' is required" });
       }
 
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10`);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Google Books API error:', errorData);
-        return res.status(response.status).json({ 
-          error: "Google Books API error", 
-          details: errorData 
-        });
+      const maxRetries = 3;
+      let lastError = null;
+      let attempt = 0;
+
+      while (attempt < maxRetries) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+
+          const response = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10&country=US&projection=lite`,
+            {
+              signal: controller.signal,
+              headers: {
+                'User-Agent': 'BookFlow/1.0 (https://github.com/jlowder/BookFlow)'
+              }
+            }
+          );
+
+          clearTimeout(timeout);
+
+          if (response.ok) {
+            const data = await response.json();
+            if (!data.items || data.items.length === 0) {
+              console.log(`No results found for query "${q}"`);
+            }
+            return res.json(data);
+          }
+
+          const errorData = await response.json().catch(() => ({}));
+          lastError = { status: response.status, data: errorData };
+
+          // Retry on 5xx or 429
+          if (response.status >= 500 || response.status === 429) {
+            const delay = Math.pow(2, attempt) * 1000;
+            console.warn(`Google Books API attempt ${attempt + 1} failed for "${q}" with status ${response.status}. Retrying in ${delay}ms...`);
+            attempt++;
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          } else {
+            // Don't retry on other 4xx errors
+            break;
+          }
+        } catch (error: any) {
+          lastError = { status: 500, data: { message: error.message } };
+          console.warn(`Google Books API fetch attempt ${attempt + 1} error for "${q}":`, error.message);
+          attempt++;
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            continue;
+          }
+        }
       }
 
-      const data = await response.json();
-      res.json(data);
+      console.error(`Google Books API final failure for query "${q}":`, lastError?.status, JSON.stringify(lastError?.data));
+      res.status(lastError?.status || 500).json({
+        error: "Google Books API error",
+        details: lastError?.data
+      });
     } catch (error) {
       console.error('Search error:', error);
       res.status(500).json({ error: "Failed to search books" });
@@ -250,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add header row
       csvData.push([
         'Type', 'BookId', 'Title', 'Author', 'Color', 'CoverUrl', 'TotalPages', 
-        'CurrentPage', 'Status', 'StartDate', 'CompletedDate', 'Notes',
+        'CurrentPage', 'Status', 'StartDate', 'CompletedDate', 'PublicationDate', 'Notes',
         'SessionId', 'SessionDate', 'PagesRead', 'Duration', 'SessionNotes'
       ]);
 
@@ -264,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             csvData.push([
               'book_with_session', book.id, book.title, book.author, book.color,
               book.coverUrl || '', book.totalPages || '', book.currentPage || '',
-              book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+              book.status, book.startDate || '', book.completedDate || '', book.publicationDate || '', book.notes || '',
               session.id, session.date, session.pagesRead || '', session.duration || '', session.notes || ''
             ]);
           }
@@ -273,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           csvData.push([
             'book_only', book.id, book.title, book.author, book.color,
             book.coverUrl || '', book.totalPages || '', book.currentPage || '',
-            book.status, book.startDate || '', book.completedDate || '', book.notes || '',
+            book.status, book.startDate || '', book.completedDate || '', book.publicationDate || '', book.notes || '',
             '', '', '', '', ''
           ]);
         }
@@ -333,6 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: record.Status as "reading" | "completed" | "paused",
               startDate: record.StartDate || null,
               completedDate: record.CompletedDate || null,
+              publicationDate: record.PublicationDate || null,
               notes: record.Notes || null
             };
 

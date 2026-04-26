@@ -4,6 +4,60 @@ import type { Book, InsertBook, ReadingSession, InsertReadingSession } from "@sh
 import type { IStorage } from './storage';
 import { toLocalDateString, parseLocalDate } from "./date-utils";
 
+// Helper function to validate and standardize date strings to YYYY-MM-DD format
+const standardizeDateString = (dateInput: string | Date | null | undefined): string | null => {
+  // Handle null/undefined
+  if (dateInput === null || dateInput === undefined) {
+    return null;
+  }
+
+  let dateObj: Date;
+
+  // Handle Date objects
+  if (dateInput instanceof Date) {
+    dateObj = dateInput;
+  } else {
+    // Handle string values
+    const dateStr = String(dateInput).trim();
+    
+    // Empty string
+    if (!dateStr) {
+      return null;
+    }
+
+    // Try parsing YYYY-MM-DD format first
+    const ymdRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const ymdMatch = dateStr.match(ymdRegex);
+    if (ymdMatch) {
+      const [, year, month, day] = ymdMatch;
+      const testDate = new Date(Number(year), Number(month) - 1, Number(day));
+      
+      // Validate the date is real (handles cases like 2024-02-30)
+      if (
+        testDate.getFullYear() === Number(year) &&
+        testDate.getMonth() === Number(month) - 1 &&
+        testDate.getDate() === Number(day)
+      ) {
+        return dateStr;
+      }
+    }
+
+    // Try parsing ISO format or other formats with Date constructor
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      // Convert to YYYY-MM-DD format
+      return toLocalDateString(parsedDate);
+    }
+
+    // Invalid date string
+    console.warn(`[SQLiteStorage] Invalid date string: "${dateStr}"`);
+    return null;
+  }
+
+  // Convert Date to YYYY-MM-DD format
+  return toLocalDateString(dateObj);
+};
+
 export class SQLiteStorage implements IStorage {
   private db: Database.Database;
 
@@ -38,9 +92,11 @@ export class SQLiteStorage implements IStorage {
         color TEXT NOT NULL,
         startDate TEXT,
         completedDate TEXT,
+        publicationDate TEXT,
         notes TEXT
       )
     `);
+    try { this.db.exec("ALTER TABLE books ADD COLUMN publicationDate TEXT"); } catch (e) {} 
 
     // Create reading_sessions table
     this.db.exec(`
@@ -77,11 +133,14 @@ export class SQLiteStorage implements IStorage {
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    // Use provided startDate if available, otherwise fall back to UTC date
-    const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];
+    // Validate and standardize dates
+    const startDate = standardizeDateString(insertBook.startDate) || toLocalDateString(new Date());
+    const completedDate = standardizeDateString(insertBook.completedDate);
+    const publicationDate = standardizeDateString(insertBook.publicationDate);
+    
     const stmt = this.db.prepare(`
-      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, completedDate, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO books (title, author, color, coverUrl, totalPages, currentPage, status, startDate, completedDate, publicationDate, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     const result = stmt.run(
@@ -93,7 +152,8 @@ export class SQLiteStorage implements IStorage {
       insertBook.currentPage || null,
       insertBook.status || 'reading',
       startDate,
-      insertBook.completedDate || null,
+      completedDate,
+      publicationDate,
       insertBook.notes || null
     );
 
@@ -111,14 +171,18 @@ export class SQLiteStorage implements IStorage {
     
     for (const [key, value] of Object.entries(updates)) {
       if (key !== 'id') {
+        // Validate and standardize date fields
+        const standardizedValue = key === 'publicationDate' || key === 'startDate' || key === 'completedDate'
+          ? standardizeDateString(value)
+          : value;
         fields.push(`${key} = ?`);
-        values.push(value);
+        values.push(standardizedValue);
       }
     }
 
     if (updates.status === "completed" && !book.completedDate) {
       fields.push('completedDate = ?');
-      values.push(new Date().toISOString().split('T')[0]);
+      values.push(toLocalDateString(new Date()));
     }
 
     if (fields.length > 0) {

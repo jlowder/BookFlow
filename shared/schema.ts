@@ -13,6 +13,7 @@ export const books = pgTable("books", {
   color: text("color").notNull(), // Hex color for timeline visualization
   startDate: date("start_date"),
   completedDate: date("completed_date"),
+  publicationDate: date("publication_date"),
   notes: text("notes"),
 });
 
@@ -30,6 +31,7 @@ export const insertBookSchema = createInsertSchema(books).omit({
   completedDate: true,
 }).extend({
   startDate: z.string().optional(), // Optional, will be set to current local date if not provided
+  publicationDate: z.string().optional(), // Optional, for backward compatibility
 });
 
 export const insertReadingSessionSchema = createInsertSchema(readingSessions).omit({
