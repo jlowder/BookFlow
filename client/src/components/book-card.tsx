@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, CheckCircle, FileText, Edit, Clock } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -234,37 +235,58 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => { e.stopPropagation(); setIsNotesOpen(true); }}
-                  className="h-8 w-8 rounded-md p-0 bg-[#e5e7eb] hover:bg-gray-300 border-gray-300 text-gray-700"
-                >
-                  <FileText className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); setIsNotesOpen(true); }}
+                      className="h-8 w-8 rounded-md p-0 bg-[#e5e7eb] hover:bg-gray-300 border-gray-300 text-gray-700"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Open the book's notes editor</p>
+                  </TooltipContent>
+                </Tooltip>
                 {onEditModeToggle && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => { e.stopPropagation(); onEditModeToggle(book.id); }}
-                    className={`h-8 w-8 rounded-md p-0 border-gray-300 text-gray-700 ${
-                      isEditMode
-                        ? 'bg-blue-100 hover:bg-blue-200 border-blue-300'
-                        : 'bg-[#e5e7eb] hover:bg-gray-300'
-                    }`}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => { e.stopPropagation(); onEditModeToggle(book.id); }}
+                        className={`h-8 w-8 rounded-md p-0 border-gray-300 text-gray-700 ${
+                          isEditMode
+                            ? 'bg-blue-100 hover:bg-blue-200 border-blue-300'
+                            : 'bg-[#e5e7eb] hover:bg-gray-300'
+                        }`}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Toggle timeline editing mode for this book</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => { e.stopPropagation(); markCompleteMutation.mutate(); }}
-                  disabled={markCompleteMutation.isPending}
-                  className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-green-100 border-green-200 text-green-700 p-0 bg-[#e5e7eb]"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); markCompleteMutation.mutate(); }}
+                      disabled={markCompleteMutation.isPending}
+                      className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-green-100 border-green-200 text-green-700 p-0 bg-[#e5e7eb]"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mark this book as completed and move it to the completed set</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
           ) : (
@@ -277,15 +299,22 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
                 )}
               </div>
               <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => { e.stopPropagation(); unCompleteMutation.mutate(); }}
-                  disabled={unCompleteMutation.isPending}
-                  className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-blue-100 border-blue-200 text-blue-700 bg-[#e5e7eb]"
-                >
-                  <Clock className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => { e.stopPropagation(); unCompleteMutation.mutate(); }}
+                      disabled={unCompleteMutation.isPending}
+                      className="gap-2 text-sm font-medium inline-flex items-center justify-center whitespace-nowrap ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 border hover:text-accent-foreground h-8 w-8 rounded-md hover:bg-blue-100 border-blue-200 text-blue-700 bg-[#e5e7eb]"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Move this book back to the currently-reading set</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
           )}
