@@ -210,6 +210,30 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getAveragePagesPerBook(): Promise<number> {
+    const completedBooks = Array.from(this.books.values()).filter(book => 
+      book.status === "completed" && book.totalPages !== null
+    );
+    if (completedBooks.length === 0) {
+      return 0;
+    }
+    const totalPages = completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
+    return Math.round((totalPages / completedBooks.length) * 100) / 100;
+  }
+
+  async getBooksPerYear(today: string): Promise<number> {
+    const avgPagesPerBook = await this.getAveragePagesPerBook();
+    const avgPagesPerDay = await this.getAveragePagesPerDay(today);
+    
+    if (avgPagesPerDay === 0) {
+      return 0;
+    }
+    
+    // books per year = (avg pages per day * 365) / avg pages per book
+    const booksPerYear = (avgPagesPerDay * 365) / avgPagesPerBook;
+    return Math.round(booksPerYear * 10) / 10;
+  }
+
   async clearAllData(): Promise<void> {
     this.books.clear();
     this.readingSessions.clear();

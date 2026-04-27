@@ -426,6 +426,25 @@ export class SQLiteStorage implements IStorage {
     );
   }
 
+  async getAveragePagesPerBook(): Promise<number> {
+    const stmt = this.db.prepare('SELECT AVG(totalPages) as avg FROM books WHERE status = ? AND totalPages IS NOT NULL');
+    const result = stmt.get('completed') as { avg: number };
+    return result.avg || 0;
+  }
+
+  async getBooksPerYear(today: string): Promise<number> {
+    const avgPagesPerBook = await this.getAveragePagesPerBook();
+    const avgPagesPerDay = await this.getAveragePagesPerDay(today);
+    
+    if (avgPagesPerDay === 0) {
+      return 0;
+    }
+    
+    // books per year = (avg pages per day * 365) / avg pages per book
+    const booksPerYear = (avgPagesPerDay * 365) / avgPagesPerBook;
+    return Math.round(booksPerYear * 10) / 10;
+  }
+
   async clearAllData(): Promise<void> {
     console.log('[SQLiteStorage] Clearing all data...');
     

@@ -8,6 +8,8 @@ interface Statistics {
   avgPages: number;
   totalPages: number;
   pagesRemaining: number;
+  avgPagesPerBook: number;
+  booksPerYear: number;
 }
 
 export default function StatisticsWidget() {
@@ -48,6 +50,12 @@ export default function StatisticsWidget() {
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
         <BookOpen className="w-4 h-4 text-blue-500" />
         <span className="font-medium">{formatStat(stats.totalPages, "pg")}</span>
+      </div>
+
+      {/* Books per year */}
+      <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+        <Calendar className="w-4 h-4 text-cyan-500" />
+        <span className="font-medium">{formatStat(stats.booksPerYear, "books/yr")}</span>
       </div>
 
       {/* Pages remaining in currently-reading books */}
