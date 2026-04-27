@@ -379,24 +379,20 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getAveragePagesPerDay(today: string): Promise<number> {
-    // Get completed books
-    const completedStmt = this.db.prepare('SELECT totalPages, completedDate FROM books WHERE status = ? AND totalPages IS NOT NULL AND completedDate IS NOT NULL');
-    const completedBooks = completedStmt.all('completed') as { totalPages: number | null; completedDate: string }[];
+    // Get the earliest completed date and total pages in a single query
+    const stmt = this.db.prepare(`
+      SELECT MIN(completedDate) as earliestDate, SUM(totalPages) as totalPages 
+      FROM books 
+      WHERE status = ? AND totalPages IS NOT NULL AND completedDate IS NOT NULL
+    `);
+    const result = stmt.get('completed') as { earliestDate: string | null; totalPages: number | null };
     
-    if (completedBooks.length === 0) {
+    if (!result.earliestDate || result.totalPages === 0) {
       return 0;
     }
     
-    // Get the earliest completed date
-    let earliestDate = completedBooks[0].completedDate;
-    for (const book of completedBooks) {
-      if (book.completedDate < earliestDate) {
-        earliestDate = book.completedDate;
-      }
-    }
-    
     // Calculate days between earliest completed book and today
-    const firstDate = parseLocalDate(earliestDate);
+    const firstDate = parseLocalDate(result.earliestDate);
     const todayDate = parseLocalDate(today);
     const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -405,10 +401,7 @@ export class SQLiteStorage implements IStorage {
       return 0;
     }
     
-    // Calculate total pages read from completed books
-    const totalPages = completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
-    
-    return Math.round((totalPages / diffDays) * 100) / 100;
+    return Math.round((result.totalPages! / diffDays) * 100) / 100;
   }
 
   async getTotalPagesRead(): Promise<number> {
