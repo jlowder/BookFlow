@@ -441,7 +441,7 @@ export class SQLiteStorage implements IStorage {
     }
     
     // books per year = (avg pages per day * 365) / avg pages per book
-    const booksPerYear = (avgPagesPerDay * 365) / avgPagesPerBook;
+    const booksPerYear = avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
     return Math.round(booksPerYear * 10) / 10;
   }
 
