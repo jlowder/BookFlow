@@ -1,4 +1,11 @@
-import { books, readingSessions, type Book, type InsertBook, type ReadingSession, type InsertReadingSession } from "@shared/schema";
+import {
+  books,
+  readingSessions,
+  type Book,
+  type InsertBook,
+  type ReadingSession,
+  type InsertReadingSession,
+} from "@shared/schema";
 import { toLocalDateString, parseLocalDate } from "./date-utils";
 import { SQLiteStorage } from "./database";
 
@@ -7,26 +14,32 @@ export interface IStorage {
   getBooks(): Promise<Book[]>;
   getBook(id: number): Promise<Book | undefined>;
   getBooksByStatus(status: "reading" | "completed" | "paused"): Promise<Book[]>;
-  getCompletedBooksInRange: (startDate: string, endDate: string) => Promise<Book[]>;
+  getCompletedBooksInRange: (
+    startDate: string,
+    endDate: string,
+  ) => Promise<Book[]>;
   createBook(book: InsertBook): Promise<Book>;
   updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined>;
   deleteBook(id: number): Promise<boolean>;
-  
+
   // Reading session operations
   getAllReadingSessions(): Promise<ReadingSession[]>;
   getReadingSessions(bookId: number): Promise<ReadingSession[]>;
   getReadingSessionsByDate(date: string): Promise<ReadingSession[]>;
-  getReadingSessionsInRange(startDate: string, endDate: string): Promise<ReadingSession[]>;
+  getReadingSessionsInRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<ReadingSession[]>;
   createReadingSession(session: InsertReadingSession): Promise<ReadingSession>;
   deleteReadingSession(id: number): Promise<boolean>;
-  
+
   // Statistics
   getReadingStreak(today: string): Promise<number>;
   getTotalBooksRead(): Promise<number>;
   getAveragePagesPerDay(today: string): Promise<number>;
   getTotalPagesRead(): Promise<number>;
   getPagesRemainingInCurrentlyReading(): Promise<number>;
-  
+
   // Data management
   clearAllData(): Promise<void>;
 }
@@ -52,15 +65,20 @@ export class MemStorage implements IStorage {
     return this.books.get(id);
   }
 
-  async getBooksByStatus(status: "reading" | "completed" | "paused"): Promise<Book[]> {
-    return Array.from(this.books.values()).filter(book => book.status === status);
+  async getBooksByStatus(
+    status: "reading" | "completed" | "paused",
+  ): Promise<Book[]> {
+    return Array.from(this.books.values()).filter(
+      (book) => book.status === status,
+    );
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
     const id = this.currentBookId++;
     // Use provided startDate if available, otherwise fall back to UTC date
-    const startDate = insertBook.startDate || new Date().toISOString().split('T')[0];
-    const book: Book = { 
+    const startDate =
+      insertBook.startDate || new Date().toISOString().split("T")[0];
+    const book: Book = {
       id,
       title: insertBook.title,
       author: insertBook.author,
@@ -71,21 +89,24 @@ export class MemStorage implements IStorage {
       status: insertBook.status || "reading",
       startDate: startDate,
       completedDate: null,
-      notes: insertBook.notes || null
+      notes: insertBook.notes || null,
     };
     this.books.set(id, book);
     return book;
   }
 
-  async updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined> {
+  async updateBook(
+    id: number,
+    updates: Partial<Book>,
+  ): Promise<Book | undefined> {
     const book = this.books.get(id);
     if (!book) return undefined;
-    
+
     const updatedBook = { ...book, ...updates };
     if (updates.status === "completed" && !book.completedDate) {
-      updatedBook.completedDate = new Date().toISOString().split('T')[0];
+      updatedBook.completedDate = new Date().toISOString().split("T")[0];
     }
-    
+
     this.books.set(id, updatedBook);
     return updatedBook;
   }
@@ -99,28 +120,37 @@ export class MemStorage implements IStorage {
   }
 
   async getReadingSessions(bookId: number): Promise<ReadingSession[]> {
-    return Array.from(this.readingSessions.values()).filter(session => session.bookId === bookId);
-  }
-
-  async getReadingSessionsByDate(date: string): Promise<ReadingSession[]> {
-    return Array.from(this.readingSessions.values()).filter(session => session.date === date);
-  }
-
-  async getReadingSessionsInRange(startDate: string, endDate: string): Promise<ReadingSession[]> {
-    return Array.from(this.readingSessions.values()).filter(session => 
-      session.date >= startDate && session.date <= endDate
+    return Array.from(this.readingSessions.values()).filter(
+      (session) => session.bookId === bookId,
     );
   }
 
-  async createReadingSession(insertSession: InsertReadingSession): Promise<ReadingSession> {
+  async getReadingSessionsByDate(date: string): Promise<ReadingSession[]> {
+    return Array.from(this.readingSessions.values()).filter(
+      (session) => session.date === date,
+    );
+  }
+
+  async getReadingSessionsInRange(
+    startDate: string,
+    endDate: string,
+  ): Promise<ReadingSession[]> {
+    return Array.from(this.readingSessions.values()).filter(
+      (session) => session.date >= startDate && session.date <= endDate,
+    );
+  }
+
+  async createReadingSession(
+    insertSession: InsertReadingSession,
+  ): Promise<ReadingSession> {
     const id = this.currentSessionId++;
-    const session: ReadingSession = { 
+    const session: ReadingSession = {
       id,
       bookId: insertSession.bookId,
       date: insertSession.date,
       pagesRead: insertSession.pagesRead || null,
       duration: insertSession.duration || null,
-      notes: insertSession.notes || null
+      notes: insertSession.notes || null,
     };
     this.readingSessions.set(id, session);
     return session;
@@ -132,12 +162,12 @@ export class MemStorage implements IStorage {
 
   async getReadingStreak(today: string): Promise<number> {
     const sessions = Array.from(this.readingSessions.values());
-    const dates = new Set(sessions.map(s => s.date));
+    const dates = new Set(sessions.map((s) => s.date));
 
     if (dates.size === 0) {
       return 0;
     }
-    
+
     let currentDate = today;
     if (!dates.has(currentDate)) {
       return 0;
@@ -156,81 +186,97 @@ export class MemStorage implements IStorage {
   }
 
   async getTotalBooksRead(): Promise<number> {
-    return Array.from(this.books.values()).filter(book => book.status === "completed").length;
+    return Array.from(this.books.values()).filter(
+      (book) => book.status === "completed",
+    ).length;
   }
 
   async getAveragePagesPerDay(today: string): Promise<number> {
-    const sessions = Array.from(this.readingSessions.values());
-    const completedBooks = Array.from(this.books.values()).filter(book => book.status === "completed");
-    
-    if (completedBooks.length === 0 || sessions.length === 0) {
+    const completedBooks = Array.from(this.books.values()).filter(
+      (book) => book.status === "completed",
+    );
+
+    if (completedBooks.length === 0 || this.readingSessions.size === 0) {
       return 0;
     }
-    
+
     // Get the date of the first completed book
     const completedDates = completedBooks
-      .map(book => book.completedDate)
-      .filter(date => date !== null && date !== undefined) as string[];
-    
+      .map((book) => book.completedDate)
+      .filter((date) => date !== null && date !== undefined) as string[];
+
     if (completedDates.length === 0) {
       return 0;
     }
-    
-    const firstCompletedDate = completedDates.reduce((earliest, current) => 
-      current < earliest ? current : earliest
+
+    const firstCompletedDate = completedDates.reduce((earliest, current) =>
+      current < earliest ? current : earliest,
     );
-    
+
     // Calculate days between first completed book and today
     const firstDate = parseLocalDate(firstCompletedDate);
     const todayDate = parseLocalDate(today);
     const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       return 0;
     }
-    
+
     // Calculate total pages read from completed books
-    const totalPages = completedBooks.reduce((sum, book) => 
-      sum + (book.totalPages || 0), 0
+    const totalPages = completedBooks.reduce(
+      (sum, book) => sum + (book.totalPages || 0),
+      0,
     );
-    
+
     return Math.round((totalPages / diffDays) * 100) / 100;
   }
 
   async getTotalPagesRead(): Promise<number> {
-    const completedBooks = Array.from(this.books.values()).filter(book => book.status === "completed");
-    return completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
+    const completedBooks = Array.from(this.books.values()).filter(
+      (book) => book.status === "completed",
+    );
+    return completedBooks.reduce(
+      (sum, book) => sum + (book.totalPages || 0),
+      0,
+    );
   }
 
   async getPagesRemainingInCurrentlyReading(): Promise<number> {
-    const readingBooks = Array.from(this.books.values()).filter(book => book.status === "reading");
-    return readingBooks.reduce((sum, book) => 
-      sum + ((book.totalPages || 0) - (book.currentPage || 0)), 0
+    const readingBooks = Array.from(this.books.values()).filter(
+      (book) => book.status === "reading",
+    );
+    return readingBooks.reduce(
+      (sum, book) => sum + ((book.totalPages || 0) - (book.currentPage || 0)),
+      0,
     );
   }
 
   async getAveragePagesPerBook(): Promise<number> {
-    const completedBooks = Array.from(this.books.values()).filter(book => 
-      book.status === "completed" && book.totalPages !== null
+    const completedBooks = Array.from(this.books.values()).filter(
+      (book) => book.status === "completed" && book.totalPages !== null,
     );
     if (completedBooks.length === 0) {
       return 0;
     }
-    const totalPages = completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
+    const totalPages = completedBooks.reduce(
+      (sum, book) => sum + (book.totalPages || 0),
+      0,
+    );
     return Math.round((totalPages / completedBooks.length) * 100) / 100;
   }
 
   async getBooksPerYear(today: string): Promise<number> {
     const avgPagesPerBook = await this.getAveragePagesPerBook();
     const avgPagesPerDay = await this.getAveragePagesPerDay(today);
-    
+
     if (avgPagesPerDay === 0) {
       return 0;
     }
-    
+
     // books per year = (avg pages per day * 365) / avg pages per book
-    const booksPerYear = avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
+    const booksPerYear =
+      avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
     return Math.round(booksPerYear * 10) / 10;
   }
 
