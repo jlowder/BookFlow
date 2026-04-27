@@ -5,12 +5,13 @@ import { useElementWidth } from "@/hooks/use-element-width";
 import { usePrevious } from "@/hooks/use-previous";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, Flame, Library, Database, Github } from "lucide-react";
+import { BookOpen, Plus, Flame, Library, Database, Github, Clock, Calendar } from "lucide-react";
 import type { Book, ReadingSession } from "@shared/schema";
 import BookCard from "@/components/book-card";
 import AddBookModal from "@/components/add-book-modal";
 import ReadingTimeline from "@/components/reading-timeline";
 import BookDetailsModal from "@/components/book-details-modal";
+import StatisticsWidget from "@/components/statistics-widget";
 import { toLocalDateString } from "@/lib/date-utils";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -130,6 +131,8 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <StatisticsWidget />
+              
               <div className="hidden sm:flex items-center space-x-6 text-sm">
                 <span className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
                   <Flame className="w-4 h-4 text-orange-500" />
