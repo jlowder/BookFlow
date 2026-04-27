@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCurrentDate } from "@/hooks/use-current-date";
 import { toLocalDateString } from "@/lib/date-utils";
 import { BookOpen, Calendar, Clock } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface Statistics {
   streak: number;
@@ -42,36 +43,64 @@ export default function StatisticsWidget() {
   return (
     <div className="flex items-center space-x-3 text-sm">
       {/* Average pages per day */}
-      <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <Clock className="w-4 h-4 text-purple-500" />
-        <span className="font-medium">
-          {formatStat(stats.avgPages, "pg/day")}
-        </span>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-sm" tabIndex={0}>
+            <Clock className="w-4 h-4 text-purple-500" />
+            <span className="font-medium">
+              {formatStat(stats.avgPages, "pg/day")}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Average number of pages read each day</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Total pages read */}
-      <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <BookOpen className="w-4 h-4 text-green-500" />
-        <span className="font-medium">
-          {formatStat(stats.totalPages, "pg")}
-        </span>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+            <BookOpen className="w-4 h-4 text-green-500" />
+            <span className="font-medium">
+              {formatStat(stats.totalPages, "pg")}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Total number of pages read across all completed books</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Books per year */}
-      <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <Calendar className="w-4 h-4 text-cyan-500" />
-        <span className="font-medium">
-          {formatStat(stats.booksPerYear, "books/yr")}
-        </span>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+            <Calendar className="w-4 h-4 text-cyan-500" />
+            <span className="font-medium">
+              {formatStat(stats.booksPerYear, "books/yr")}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Estimated number of books you'll complete this year based on your reading pace</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Pages remaining in currently-reading books */}
-      <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <BookOpen className="w-4 h-4 text-orange-500" />
-        <span className="font-medium">
-          {formatStat(stats.pagesRemaining, "pg")}
-        </span>
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+            <BookOpen className="w-4 h-4 text-orange-500" />
+            <span className="font-medium">
+              {formatStat(stats.pagesRemaining, "pg")}
+            </span>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Number of pages left to read in your currently-reading books</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }
