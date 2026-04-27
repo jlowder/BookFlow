@@ -20,6 +20,7 @@ export default function StatisticsWidget() {
     queryFn: async () => {
       const today = toLocalDateString(currentDate);
       const response = await fetch(`/api/stats?today=${today}`);
+      if (!response.ok) throw new Error("Failed to fetch statistics");
       return response.json();
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -43,25 +44,33 @@ export default function StatisticsWidget() {
       {/* Average pages per day */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
         <Clock className="w-4 h-4 text-purple-500" />
-        <span className="font-medium">{formatStat(stats.avgPages, "pg/day")}</span>
+        <span className="font-medium">
+          {formatStat(stats.avgPages, "pg/day")}
+        </span>
       </div>
 
       {/* Total pages read */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
         <BookOpen className="w-4 h-4 text-blue-500" />
-        <span className="font-medium">{formatStat(stats.totalPages, "pg")}</span>
+        <span className="font-medium">
+          {formatStat(stats.totalPages, "pg")}
+        </span>
       </div>
 
       {/* Books per year */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
         <Calendar className="w-4 h-4 text-cyan-500" />
-        <span className="font-medium">{formatStat(stats.booksPerYear, "books/yr")}</span>
+        <span className="font-medium">
+          {formatStat(stats.booksPerYear, "books/yr")}
+        </span>
       </div>
 
       {/* Pages remaining in currently-reading books */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
         <Calendar className="w-4 h-4 text-orange-500" />
-        <span className="font-medium">{formatStat(stats.pagesRemaining, "pg")}</span>
+        <span className="font-medium">
+          {formatStat(stats.pagesRemaining, "pg")}
+        </span>
       </div>
     </div>
   );
