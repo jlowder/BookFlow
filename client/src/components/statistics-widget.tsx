@@ -51,7 +51,7 @@ export default function StatisticsWidget() {
 
       {/* Total pages read */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <BookOpen className="w-4 h-4 text-blue-500" />
+        <BookOpen className="w-4 h-4 text-green-500" />
         <span className="font-medium">
           {formatStat(stats.totalPages, "pg")}
         </span>
