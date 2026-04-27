@@ -67,7 +67,7 @@ export default function StatisticsWidget() {
 
       {/* Pages remaining in currently-reading books */}
       <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
-        <Calendar className="w-4 h-4 text-orange-500" />
+        <BookOpen className="w-4 h-4 text-orange-500" />
         <span className="font-medium">
           {formatStat(stats.pagesRemaining, "pg")}
         </span>
