@@ -45,7 +45,7 @@ export default function StatisticsWidget() {
       {/* Average pages per day */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300">
+          <div className="flex items-center space-x-1 text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-sm" tabIndex={0}>
             <Clock className="w-4 h-4 text-purple-500" />
             <span className="font-medium">
               {formatStat(stats.avgPages, "pg/day")}
