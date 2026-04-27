@@ -187,30 +187,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stats", async (req, res) => {
     try {
       const today = req.query.today as string | undefined;
+      const targetDate = today || (new Date().toISOString().split('T')[0]);
+      
       if (!today) {
-        // Fallback to server's local date if not provided
-        console.warn(`[API /stats] 'today' query param not provided. Falling back to server's date.`);
-        const serverToday = new Date().toISOString().split('T')[0];
-        const [streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear] = await Promise.all([
-          storage.getReadingStreak(serverToday),
-          storage.getTotalBooksRead(),
-          storage.getAveragePagesPerDay(serverToday),
-          storage.getTotalPagesRead(),
-          storage.getPagesRemainingInCurrentlyReading(),
-          storage.getAveragePagesPerBook(),
-          storage.getBooksPerYear(serverToday)
-        ]);
-        return res.json({ streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear });
+        console.warn("[API /stats] 'today' query param not provided. Falling back to server's date.");
       }
-
+      
       const [streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear] = await Promise.all([
-        storage.getReadingStreak(today),
+        storage.getReadingStreak(targetDate),
         storage.getTotalBooksRead(),
-        storage.getAveragePagesPerDay(today),
+        storage.getAveragePagesPerDay(targetDate),
         storage.getTotalPagesRead(),
         storage.getPagesRemainingInCurrentlyReading(),
         storage.getAveragePagesPerBook(),
-        storage.getBooksPerYear(today)
+        storage.getBooksPerYear(targetDate)
       ]);
       
       res.json({ streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear });
