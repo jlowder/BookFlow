@@ -191,19 +191,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fallback to server's local date if not provided
         console.warn(`[API /stats] 'today' query param not provided. Falling back to server's date.`);
         const serverToday = new Date().toISOString().split('T')[0];
-        const [streak, totalBooks] = await Promise.all([
+        const [streak, totalBooks, avgPages, totalPages, pagesRemaining] = await Promise.all([
           storage.getReadingStreak(serverToday),
-          storage.getTotalBooksRead()
+          storage.getTotalBooksRead(),
+          storage.getAveragePagesPerDay(serverToday),
+          storage.getTotalPagesRead(),
+          storage.getPagesRemainingInCurrentlyReading()
         ]);
-        return res.json({ streak, totalBooks });
+        return res.json({ streak, totalBooks, avgPages, totalPages, pagesRemaining });
       }
 
-      const [streak, totalBooks] = await Promise.all([
+      const [streak, totalBooks, avgPages, totalPages, pagesRemaining] = await Promise.all([
         storage.getReadingStreak(today),
-        storage.getTotalBooksRead()
+        storage.getTotalBooksRead(),
+        storage.getAveragePagesPerDay(today),
+        storage.getTotalPagesRead(),
+        storage.getPagesRemainingInCurrentlyReading()
       ]);
       
-      res.json({ streak, totalBooks });
+      res.json({ streak, totalBooks, avgPages, totalPages, pagesRemaining });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch statistics" });
     }

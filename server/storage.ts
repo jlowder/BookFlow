@@ -23,6 +23,9 @@ export interface IStorage {
   // Statistics
   getReadingStreak(today: string): Promise<number>;
   getTotalBooksRead(): Promise<number>;
+  getAveragePagesPerDay(today: string): Promise<number>;
+  getTotalPagesRead(): Promise<number>;
+  getPagesRemainingInCurrentlyReading(): Promise<number>;
   
   // Data management
   clearAllData(): Promise<void>;
@@ -154,6 +157,57 @@ export class MemStorage implements IStorage {
 
   async getTotalBooksRead(): Promise<number> {
     return Array.from(this.books.values()).filter(book => book.status === "completed").length;
+  }
+
+  async getAveragePagesPerDay(today: string): Promise<number> {
+    const sessions = Array.from(this.readingSessions.values());
+    const completedBooks = Array.from(this.books.values()).filter(book => book.status === "completed");
+    
+    if (completedBooks.length === 0 || sessions.length === 0) {
+      return 0;
+    }
+    
+    // Get the date of the first completed book
+    const completedDates = completedBooks
+      .map(book => book.completedDate)
+      .filter(date => date !== null && date !== undefined) as string[];
+    
+    if (completedDates.length === 0) {
+      return 0;
+    }
+    
+    const firstCompletedDate = completedDates.reduce((earliest, current) => 
+      current < earliest ? current : earliest
+    );
+    
+    // Calculate days between first completed book and today
+    const firstDate = parseLocalDate(firstCompletedDate);
+    const todayDate = parseLocalDate(today);
+    const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 0;
+    }
+    
+    // Calculate total pages read from completed books
+    const totalPages = completedBooks.reduce((sum, book) => 
+      sum + (book.totalPages || 0), 0
+    );
+    
+    return Math.round((totalPages / diffDays) * 100) / 100;
+  }
+
+  async getTotalPagesRead(): Promise<number> {
+    const completedBooks = Array.from(this.books.values()).filter(book => book.status === "completed");
+    return completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
+  }
+
+  async getPagesRemainingInCurrentlyReading(): Promise<number> {
+    const readingBooks = Array.from(this.books.values()).filter(book => book.status === "reading");
+    return readingBooks.reduce((sum, book) => 
+      sum + ((book.totalPages || 0) - (book.currentPage || 0)), 0
+    );
   }
 
   async clearAllData(): Promise<void> {

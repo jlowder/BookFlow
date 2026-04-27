@@ -378,6 +378,54 @@ export class SQLiteStorage implements IStorage {
     return result.count;
   }
 
+  async getAveragePagesPerDay(today: string): Promise<number> {
+    // Get completed books
+    const completedStmt = this.db.prepare('SELECT totalPages, completedDate FROM books WHERE status = ? AND totalPages IS NOT NULL AND completedDate IS NOT NULL');
+    const completedBooks = completedStmt.all('completed') as { totalPages: number | null; completedDate: string }[];
+    
+    if (completedBooks.length === 0) {
+      return 0;
+    }
+    
+    // Get the earliest completed date
+    let earliestDate = completedBooks[0].completedDate;
+    for (const book of completedBooks) {
+      if (book.completedDate < earliestDate) {
+        earliestDate = book.completedDate;
+      }
+    }
+    
+    // Calculate days between earliest completed book and today
+    const firstDate = parseLocalDate(earliestDate);
+    const todayDate = parseLocalDate(today);
+    const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 0;
+    }
+    
+    // Calculate total pages read from completed books
+    const totalPages = completedBooks.reduce((sum, book) => sum + (book.totalPages || 0), 0);
+    
+    return Math.round((totalPages / diffDays) * 100) / 100;
+  }
+
+  async getTotalPagesRead(): Promise<number> {
+    const stmt = this.db.prepare('SELECT COALESCE(SUM(totalPages), 0) as total FROM books WHERE status = ?');
+    const result = stmt.get('completed') as { total: number };
+    return result.total;
+  }
+
+  async getPagesRemainingInCurrentlyReading(): Promise<number> {
+    const stmt = this.db.prepare('SELECT totalPages, currentPage FROM books WHERE status = ?');
+    const readingBooks = stmt.all('reading') as { totalPages: number | null; currentPage: number }[];
+    
+    return readingBooks.reduce((sum, book) => 
+      sum + ((book.totalPages || 0) - (book.currentPage || 0)), 0
+    );
+  }
+
   async clearAllData(): Promise<void> {
     console.log('[SQLiteStorage] Clearing all data...');
     
