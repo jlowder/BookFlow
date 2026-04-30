@@ -74,19 +74,21 @@ background: day.isEmpty
 
 **After:**
 ```tsx
-background: day.isEmpty
-  ? 'transparent'
-  : (day.colors || []).length === 0
-    ? '#f3f4f6'
-    : (day.colors || []).length === 1
-      ? day.colors[0]
-      : (day.colors || []).length === 2
-        ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
-        : (day.colors || []).length === 3
-          ? `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
-          : (day.colors || []).length >= 4
-            ? `linear-gradient(90deg, ${day.colors[0]} 25%, ${day.colors[1]} 25% 50%, ${day.colors[2]} 50% 75%, ${day.colors[3]} 75%)`
-            : '#f3f4f6'
+let backgroundStyle: React.CSSProperties['background'];
+
+if (day.isEmpty) {
+  backgroundStyle = 'transparent';
+} else if (count === 0) {
+  backgroundStyle = '#f3f4f6';
+} else if (count === 1) {
+  backgroundStyle = colors[0] || '#f3f4f6';
+} else if (count === 2) {
+  backgroundStyle = `linear-gradient(45deg, ${colors[0] || '#f3f4f6'} 50%, ${colors[1] || '#f3f4f6'} 50%)`;
+} else if (count === 3) {
+  backgroundStyle = `linear-gradient(120deg, ${colors[0] || '#f3f4f6'} 33.33%, ${colors[1] || '#f3f4f6'} 33.33% 66.66%, ${colors[2] || '#f3f4f6'} 66.66%)`;
+} else {
+  backgroundStyle = `linear-gradient(90deg, ${colors[0] || '#f3f4f6'} 25%, ${colors[1] || '#f3f4f6'} 25% 50%, ${colors[2] || '#f3f4f6'} 50% 75%, ${colors[3] || '#f3f4f6'} 75%)`;
+}
 ```
 
 **Key Improvements:**
