@@ -405,25 +405,39 @@ export default function ReadingTimeline({
                           <div className="flex">
                             {weeks.map((week, weekIndex) => (
                               <div key={weekIndex} className="flex flex-col">
-                                {week.map((day, dayIndex) => (
-                                  <div
-                                    key={dayIndex}
-                                    className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''}`}
-                                    style={{
-                                      background: day.isEmpty
-                                        ? 'transparent'
-                                        : day.colors.length === 0
-                                          ? '#f3f4f6'
-                                          : day.colors.length === 1
-                                            ? day.colors[0]
-                                            : day.colors.length === 2
-                                              ? `linear-gradient(45deg, ${day.colors[0]} 50%, ${day.colors[1]} 50%)`
-                                              : `linear-gradient(120deg, ${day.colors[0]} 33.33%, ${day.colors[1]} 33.33% 66.66%, ${day.colors[2]} 66.66%)`
-                                    }}
-                                    title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
-                                    onClick={() => handleGridCellClick(day)}
-                                  ></div>
-                                ))}
+                                {week.map((day, dayIndex) => {
+                                  // Optimize color array access with single null check
+                                  const colors = day.colors || [];
+                                  const count = colors.length;
+
+                                  // Determine background style based on number of books
+                                  let backgroundStyle: React.CSSProperties['background'];
+                                  
+                                  if (day.isEmpty) {
+                                    backgroundStyle = 'transparent';
+                                  } else if (count === 0) {
+                                    backgroundStyle = '#f3f4f6';
+                                  } else if (count === 1) {
+                                    backgroundStyle = colors[0];
+                                  } else if (count === 2) {
+                                    backgroundStyle = `linear-gradient(45deg, ${colors[0]} 50%, ${colors[1]} 50%)`;
+                                  } else if (count === 3) {
+                                    backgroundStyle = `linear-gradient(120deg, ${colors[0]} 33.33%, ${colors[1]} 33.33% 66.66%, ${colors[2]} 66.66%)`;
+                                  } else {
+                                    // 4+ books: show first 4 colors
+                                    backgroundStyle = `linear-gradient(90deg, ${colors[0]} 25%, ${colors[1]} 25% 50%, ${colors[2]} 50% 75%, ${colors[3]} 75%)`;
+                                  }
+
+                                  return (
+                                    <div
+                                      key={dayIndex}
+                                      className={`w-3 h-3 rounded-sm mb-1 mr-1 border border-gray-200 ${editModeBookId && !day.isEmpty && day.date ? 'cursor-pointer hover:border-blue-400' : ''}`}
+                                      style={{ background: backgroundStyle }}
+                                      title={day.isEmpty ? '' : new Date(day.date + 'T00:00:00').toLocaleDateString()}
+                                      onClick={() => handleGridCellClick(day)}
+                                    ></div>
+                                  );
+                                })}
                               </div>
                             ))}
                           </div>
