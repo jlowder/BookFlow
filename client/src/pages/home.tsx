@@ -43,6 +43,10 @@ export default function Home() {
 
   const getDateRange = () => {
     const endDate = new Date(currentDate);
+
+    if (timeRange === "all") {
+      endDate.setMonth(endDate.getMonth() + 12);
+    }
     const startDate = new Date(currentDate);
 
     if (timeRange === "all") {

@@ -234,33 +234,32 @@ export default function ReadingTimeline({
     // n = total books, m = total days, k = avg books per day
     const bookMap = new Map(books.map(b => [b.id, b]));
 
-    // Group timeline data by year
-    const dataByYear: { [year: number]: any[] } = {};
-    timelineData.forEach(day => {
-      const year = new Date(day.date + 'T00:00:00').getFullYear();
-      if (!dataByYear[year]) {
-        dataByYear[year] = [];
-      }
-      dataByYear[year].push(day);
-    });
+    // Use the startDate and endDate props passed from parent (home.tsx)
+    // For "All Time" selection, startDate will be 1970-01-01 and endDate will be current date
+    const gridDataStartDate = new Date(startDate.getTime());
+    const gridDataEndDate = new Date(endDate.getTime());
 
-    const yearlyGrids = Object.entries(dataByYear)
-      .sort(([yearA], [yearB]) => parseInt(yearB) - parseInt(yearA))
-      .map(([year, yearData]) => {
-        // Check if there are any reading sessions for this year
-        const hasReadingDays = yearData.some((day: any) => day.hasReading);
-        if (!hasReadingDays) {
-          return null;
-        }
+    // Generate a complete year range from the props
+    const years: number[] = [];
+    const startYear = gridDataStartDate.getFullYear();
+    const endYear = gridDataEndDate.getFullYear();
+    for (let y = endYear; y >= startYear; y--) {
+      years.push(y);
+    }
 
-        const startDateStr = yearData[0].date;
-        const endDateStr = yearData[yearData.length - 1].date;
-        const gridDataStartDate = new Date(startDateStr + 'T00:00:00');
-        const gridDataEndDate = new Date(endDateStr + 'T00:00:00');
+    const yearlyGrids = years.map((year) => {
+        // Create a complete year's worth of data, not just reading session dates
+        // This ensures all 12 months are displayed for each year
+        const yearStartDate = new Date(year, 0, 1);
+        const yearEndDate = new Date(year, 11, 31);
+
+        // Clamp to the overall date range
+        const yearGridStartDate = new Date(Math.max(yearStartDate.getTime(), gridDataStartDate.getTime()));
+        const yearGridEndDate = new Date(Math.min(yearEndDate.getTime(), gridDataEndDate.getTime()));
 
         // Find the Sunday before our start date
-        const gridStartDate = new Date(gridDataStartDate);
-        gridStartDate.setDate(gridDataStartDate.getDate() - gridDataStartDate.getDay());
+        const gridStartDate = new Date(yearGridStartDate);
+        gridStartDate.setDate(yearGridStartDate.getDate() - yearGridStartDate.getDay());
 
         // Generate weeks
         const weeks: any[][] = [];
@@ -269,11 +268,11 @@ export default function ReadingTimeline({
         let currentMonth = -1;
         let weekIndex = 0;
 
-        while (currentDate <= gridDataEndDate) {
+        while (currentDate <= yearGridEndDate) {
           const week: any[] = new Array(7).fill(null);
 
           for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-            if (currentDate >= gridDataStartDate && currentDate <= gridDataEndDate && currentDate.getMonth() !== currentMonth) {
+            if (currentDate >= yearGridStartDate && currentDate <= yearGridEndDate && currentDate.getMonth() !== currentMonth) {
               currentMonth = currentDate.getMonth();
               monthLabels.push({
                 month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
@@ -299,7 +298,7 @@ export default function ReadingTimeline({
 
               week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading, dateTitle };
             } else {
-              const isInRange = currentDate >= gridDataStartDate && currentDate <= gridDataEndDate;
+              const isInRange = currentDate >= yearGridStartDate && currentDate <= yearGridEndDate;
               // Pre-compute dateTitle to avoid Date object creation in render loop
               const dateTitle = isInRange ? new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 
@@ -332,7 +331,10 @@ export default function ReadingTimeline({
 
         return { year: parseInt(year), weeks, monthLabels: processedMonthLabels };
       })
-      .filter(Boolean);
+      .filter((grid) => {
+        // Only show years that have at least one reading session
+        return grid.weeks.some(week => week.some(day => day && day.hasReading));
+      });
 
     return yearlyGrids;
   };
