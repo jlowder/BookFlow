@@ -50,10 +50,10 @@ Then, browse to localhost:3000, or whatever port you chose. The app will be inst
 **Each day that you read something, click the "Read Today" button.** That's pretty much it! You can mark a book complete by clicking the "Complete" checkmark in the
 card (the rightmost button).
 
-**If you need to edit the timeline:** switch to the grid (12-month) view and click the Edit icon (center button in the card). Then,
+**If you need to edit the timeline:** switch to the grid (All Time) view and click the Edit icon (center button in the card). Then,
 click any day in the grid to toggle the reading state for that day. Click the Edit icon again when you are done making edits.
 
-**Note:** On smaller screens, the app defaults to a 30-day view instead of the 12-month grid. Use your phone for quick updates-like marking books read-but switch to a desktop or tablet for full timeline edits.
+**Note:** On smaller screens, the app defaults to a 30-day view instead of the All Time grid. Use your phone for quick updates-like marking books read-but switch to a desktop or tablet for full timeline edits.
 
 ## License
 
