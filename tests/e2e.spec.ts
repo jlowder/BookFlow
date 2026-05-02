@@ -120,4 +120,28 @@ test.describe('Reading Timeline Component', () => {
 
     await page.screenshot({ path: '/home/jules/verification/desktop_ribbon_view.png' });
   });
+
+  test('should transition between views when resizing', async ({ page }) => {
+    // Start with desktop
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('http://localhost:5000/');
+    await page.waitForTimeout(500);
+
+    const timeline = page.getByTestId('reading-timeline-section');
+    await expect(timeline.getByTestId('grid-view')).toBeVisible();
+
+    // Resize to mobile
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(500); // Wait for ResizeObserver and useEffect
+
+    await expect(timeline.getByTestId('ribbon-view')).toBeVisible();
+    await expect(timeline.getByRole('combobox')).toBeHidden();
+
+    // Resize back to desktop
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(500);
+
+    await expect(timeline.getByTestId('grid-view')).toBeVisible();
+    await expect(timeline.getByRole('combobox')).toBeVisible();
+  });
 });

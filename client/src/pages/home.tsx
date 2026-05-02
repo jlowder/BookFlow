@@ -22,7 +22,8 @@ export default function Home() {
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState("all");
+  // Default to 30 days for mobile; the useEffect will transition to "all" on desktop
+  const [timeRange, setTimeRange] = useState("30");
   const currentDate = useCurrentDate();
 
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -30,14 +31,16 @@ export default function Home() {
   const canShowGridView = containerWidth >= GRID_VIEW_MIN_WIDTH;
   const prevCanShowGridView = usePrevious(canShowGridView);
 
-  // This effect handles the automatic transition from mobile to desktop view.
+  // This effect handles the automatic transition between mobile and desktop view.
   // When the container becomes wide enough, it switches from the default 30-day
-  // ribbon to the 12-month grid. This should only run on this specific transition,
-  // not on every render, to allow the user to manually select the 30-day view
-  // on desktop without being overridden.
+  // ribbon to the 12-month grid. When it shrinks, it switches back to 30 days.
+  // This should only run on these specific transitions, not on every render,
+  // to allow the user to manually select a different view on desktop without being overridden.
   useEffect(() => {
     if (canShowGridView && !prevCanShowGridView) {
       setTimeRange("all");
+    } else if (!canShowGridView && prevCanShowGridView) {
+      setTimeRange("30");
     }
   }, [canShowGridView, prevCanShowGridView]);
 
