@@ -58,7 +58,8 @@ never record the number of pages read per day. It will eventually be able to inf
 **If you need to edit the timeline:** switch to the grid (All Time) view and click the Edit icon (center button in the card). Then,
 click any day in the grid to toggle the reading state for that day. Click the Edit icon again when you are done making edits.
 
-**Note:** On smaller screens, the app defaults to a 30-day view instead of the All Time grid. Use your phone for quick updates-like marking books read-but switch to a desktop or tablet for full timeline edits.
+**Note:** Only the 30-day view is supported on small screens. That means you won't be able to use your phone for timeline edits since that requires the grid view.
+Use your phone for quick updates like marking books read, but switch to a desktop or tablet for full timeline edits.
 
 ## License
 
