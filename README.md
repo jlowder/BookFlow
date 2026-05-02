@@ -12,7 +12,11 @@ BookFlow is a modern web-based reading journal that helps you track what you rea
 ## Simple Installation (docker)
 
 First, initialize a docker named volume to store the journal:
+Refactor TypeScript code formatting and fix responsive time range state
 
+- Initialize timeRange state based on window width to handle desktop/mobile
+- Use object syntax for useQuery calls to improve readability
+- Wrap JSX text content in extra <span> tags to normalize formatting
 ```sh
 docker volume create bookflow_data
 ```
@@ -48,7 +52,8 @@ Then, browse to localhost:3000, or whatever port you chose. The app will be inst
 **Add your current reads to get started.** Search for a title or author and select your book to create a card. Click any card to add personal notes or customize the color used in your timeline view.
 
 **Each day that you read something, click the "Read Today" button.** That's pretty much it! You can mark a book complete by clicking the "Complete" checkmark in the
-card (the rightmost button).
+card (the rightmost button). Over time it will be able to report statistics about your reading habits, such as the number of pages you read each day even though you
+never record the number of pages read per day. It will eventually be able to infer this rate based on how frequently you complete books and how many pages they each have.
 
 **If you need to edit the timeline:** switch to the grid (All Time) view and click the Edit icon (center button in the card). Then,
 click any day in the grid to toggle the reading state for that day. Click the Edit icon again when you are done making edits.
