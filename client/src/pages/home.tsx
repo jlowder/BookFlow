@@ -45,7 +45,7 @@ export default function Home() {
     const endDate = new Date(currentDate);
 
     if (timeRange === "all") {
-      endDate.setMonth(endDate.getMonth() + 12);
+      endDate.setFullYear(endDate.getFullYear(), 11, 31);
     }
     const startDate = new Date(currentDate);
 
