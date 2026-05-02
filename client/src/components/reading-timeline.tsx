@@ -245,7 +245,7 @@ export default function ReadingTimeline({
     });
 
     const yearlyGrids = Object.entries(dataByYear)
-      .sort(([yearA], [yearB]) => parseInt(yearA) - parseInt(yearB))
+      .sort(([yearA], [yearB]) => parseInt(yearB) - parseInt(yearA))
       .map(([year, yearData]) => {
         // Check if there are any reading sessions for this year
         const hasReadingDays = yearData.some((day: any) => day.hasReading);
