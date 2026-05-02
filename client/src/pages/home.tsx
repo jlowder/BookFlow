@@ -22,7 +22,7 @@ export default function Home() {
   const [editModeBookId, setEditModeBookId] = useState<number | null>(null);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState("30");
+  const [timeRange, setTimeRange] = useState("all");
   const currentDate = useCurrentDate();
 
   const timelineContainerRef = useRef<HTMLDivElement>(null);
@@ -37,7 +37,7 @@ export default function Home() {
   // on desktop without being overridden.
   useEffect(() => {
     if (canShowGridView && !prevCanShowGridView) {
-      setTimeRange("365");
+      setTimeRange("all");
     }
   }, [canShowGridView, prevCanShowGridView]);
 

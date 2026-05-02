@@ -350,8 +350,6 @@ export default function ReadingTimeline({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="365">12 months</SelectItem>
-              <SelectItem value="730">24 months</SelectItem>
               <SelectItem value="all">All time</SelectItem>
             </SelectContent>
           </Select>
