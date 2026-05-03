@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeImage } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,7 +7,8 @@ const __dirname = path.dirname(__filename);
 
 function createWindow() {
   const iconPath = path.join(__dirname, 'generated-icon.png');
-  console.log(`[Electron] Loading icon from: ${iconPath}`);
+  const icon = nativeImage.createFromPath(iconPath);
+  console.log(`[Electron] Loading icon from: ${iconPath}, status: ${!icon.isEmpty()}`);
 
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -16,8 +17,12 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    icon: iconPath
+    icon: icon
   });
+
+  if (process.platform === 'linux') {
+    mainWindow.setIcon(icon);
+  }
 
   // Default to 5000 for development, 3000 for production
   const isDev = process.env.NODE_ENV === 'development';
