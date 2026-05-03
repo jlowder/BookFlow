@@ -12,23 +12,33 @@ BookFlow is a modern web-based reading journal that helps you track what you rea
 ## Simple Installation (docker)
 
 First, initialize a docker named volume to store the journal:
-Refactor TypeScript code formatting and fix responsive time range state
 
-- Initialize timeRange state based on window width to handle desktop/mobile
-- Use object syntax for useQuery calls to improve readability
-- Wrap JSX text content in extra <span> tags to normalize formatting
 ```sh
 docker volume create bookflow_data
 ```
 
-Then, download and run the docker image. If you want the app to be on a port other than 3000, change the first 3000 to
-some other value.
+### Web App Version
+To run as a web application accessible via browser:
 
 ```sh
-docker run -d --restart always -d -p 3000:3000 -v bookflow_data:/app/data ghcr.io/jlowder/bookflow/bookflow:latest
+docker run -d --restart always -p 3000:3000 -v bookflow_data:/app/data ghcr.io/jlowder/bookflow/bookflow:latest
 ```
 
-Then, browse to localhost:3000, or whatever port you chose. The app will be installed permanently; that is, it will persist through reboots.
+Then, browse to `localhost:3000`.
+
+### Desktop (Electron) Version
+To run as a desktop application inside a container (requires an X server on the host):
+
+1. Allow the container to connect to your X server:
+   ```sh
+   xhost +local:docker
+   ```
+2. Run the application using docker-compose:
+   ```sh
+   docker compose up -d
+   ```
+
+This will launch the BookFlow desktop window directly on your screen while running the backend and frontend inside the container.
 
 ## Manual Installation
 
