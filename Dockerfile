@@ -1,16 +1,36 @@
-# Use Node.js 20 Alpine for smaller image size
-FROM node:20-alpine
+# Use a Debian-based Node.js image to support Electron dependencies
+FROM node:20
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache python3 make g++ sqlite
+# Install system dependencies for Electron and SQLite
+RUN apt-get update && apt-get install -y \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrender1 \
+    libxtst6 \
+    libcups2 \
+    libxss1 \
+    libnss3 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libpangocairo-1.0-0 \
+    libgtk-3-0 \
+    libgbm1 \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for build)
+# Install all dependencies
 RUN npm ci
 
 # Copy source code
@@ -23,14 +43,10 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Build the application
 RUN npm run build
 
-# Don't prune dependencies since Vite is needed at runtime for the server
-# The server imports vite.ts which requires Vite dependencies even in production
+# Create non-root user for security (match existing script names but use standard debian group/user creation)
+RUN groupadd -r nodejs && useradd -r -g nodejs nextjs
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Expose port
+# Expose port (Backend server)
 EXPOSE 3000
 
 # Set environment variables
@@ -39,4 +55,6 @@ ENV PORT=3000
 
 # Use entrypoint script to handle permissions
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["npm", "start"]
+
+# Default command starts the Electron app in production mode
+CMD ["npm", "run", "electron:start"]

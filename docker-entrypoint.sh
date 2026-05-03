@@ -2,6 +2,7 @@
 
 # Ensure the data directory exists and has proper permissions
 mkdir -p /app/data
+# Using names instead of IDs for robustness in different base images
 chown nextjs:nodejs /app/data
 chmod 755 /app/data
 
