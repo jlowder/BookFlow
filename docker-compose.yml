@@ -10,7 +10,6 @@ services:
     volumes:
       - bookflow_data:/app/data
       - /tmp/.X11-unix:/tmp/.X11-unix
-    restart: unless-stopped
     healthcheck:
       test:
         [
