@@ -1,6 +1,7 @@
 services:
   reading-journal:
     build: .
+    hostname: katana
     ports:
       - "3000:3000"
     environment:
