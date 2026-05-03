@@ -1,14 +1,25 @@
 import { app, BrowserWindow, nativeImage } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.name = 'BookFlow';
+
 function createWindow() {
   const iconPath = path.join(__dirname, 'generated-icon.png');
-  const icon = nativeImage.createFromPath(iconPath);
-  console.log(`[Electron] Loading icon from: ${iconPath}, status: ${!icon.isEmpty()}`);
+  let icon;
+
+  try {
+    const buffer = fs.readFileSync(iconPath);
+    icon = nativeImage.createFromBuffer(buffer);
+    console.log(`[Electron] Loaded icon from buffer (${buffer.length} bytes), status: ${!icon.isEmpty()}`);
+  } catch (err) {
+    console.error(`[Electron] Failed to read icon from ${iconPath}:`, err);
+    icon = nativeImage.createEmpty();
+  }
 
   const mainWindow = new BrowserWindow({
     width: 1200,
