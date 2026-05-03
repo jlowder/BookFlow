@@ -36,6 +36,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Ensure the generated icon is explicitly copied if not already handled by COPY . .
+COPY generated-icon.png /app/
+
 # Copy entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
