@@ -2,9 +2,12 @@
   "name": "rest-express",
   "version": "1.0.0",
   "type": "module",
+  "main": "main.js",
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
+    "electron:dev": "NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:5000 && electron .\"",
+    "electron:start": "NODE_ENV=production concurrently \"npm run start\" \"wait-on http://localhost:3000 && electron .\"",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
@@ -105,13 +108,16 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
     "drizzle-kit": "^0.30.4",
+    "electron": "^41.5.0",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.21.0",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^5.4.14",
+    "wait-on": "^9.0.5"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
