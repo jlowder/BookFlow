@@ -6,8 +6,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
-    "electron:dev": "NODE_ENV=development concurrently \"npm run dev\" \"wait-on http://localhost:5000 && electron .\"",
-    "electron:start": "NODE_ENV=production concurrently \"npm run start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:dev": "NODE_ENV=development concurrently --kill-others \"npm run dev\" \"wait-on http://localhost:5000 && electron . --no-sandbox\"",
+    "electron:start": "NODE_ENV=production concurrently --kill-others \"npm run start\" \"wait-on http://localhost:3000 && electron . --no-sandbox\"",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",

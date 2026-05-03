@@ -35,10 +35,12 @@ To run as a desktop application inside a container (requires an X server on the 
    ```
 2. Run the application using docker-compose:
    ```sh
-   docker compose up -d
+   docker compose up --build
    ```
 
 This will launch the BookFlow desktop window directly on your screen while running the backend and frontend inside the container.
+
+**Note:** If the window does not appear, check the logs: `docker compose logs -f`. Common issues include missing X11 permissions or an incorrect `DISPLAY` environment variable.
 
 ## Manual Installation
 
