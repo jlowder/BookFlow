@@ -137,14 +137,28 @@ const standardizeDateString = (dateInput: string | Date | null | undefined): str
   return toLocalDateString(dateObj);
 };
 
+import { homedir } from 'os';
+import { existsSync, mkdirSync } from 'fs';
+
 export class SQLiteStorage implements IStorage {
   private db: Database.Database;
 
   constructor() {
-    // Use external data directory for Docker persistence
-    const dbPath = process.env.NODE_ENV === 'production' 
-      ? '/app/data/reading_journal.db'
-      : join(process.cwd(), 'reading_journal.db');
+    let dbPath: string;
+
+    if (process.env.IS_ELECTRON === 'true') {
+      // In Electron, use a persistent directory. Use ELECTRON_USER_DATA_PATH if available (from main process)
+      const dataDir = process.env.ELECTRON_USER_DATA_PATH || join(homedir(), '.bookflow');
+      if (!existsSync(dataDir)) {
+        mkdirSync(dataDir, { recursive: true });
+      }
+      dbPath = join(dataDir, 'reading_journal.db');
+    } else {
+      // Use external data directory for Docker persistence
+      dbPath = process.env.NODE_ENV === 'production'
+        ? '/app/data/reading_journal.db'
+        : join(process.cwd(), 'reading_journal.db');
+    }
     
     try {
       console.log(`[SQLiteStorage] Attempting to open database at: ${dbPath}`);
