@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -30,12 +30,6 @@ export default function ReadingTimeline({
 }: ReadingTimelineProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Force cache invalidation on mount and time range changes to ensure fresh data
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/books"] });
-  }, [queryClient, timeRange]);
 
   const { data: books = [] } = useQuery<Book[]>({
     queryKey: ["/api/books"],
@@ -104,34 +98,34 @@ export default function ReadingTimeline({
     : startDate;
   
   const { data: sessions = [] } = useQuery<ReadingSession[]>({
-    queryKey: ["/api/reading-sessions", timeRange, toLocalDateString(fetchStartDate), toLocalDateString(endDate)],
+    queryKey: ["/api/reading-sessions", toLocalDateString(fetchStartDate), toLocalDateString(endDate)],
     queryFn: () => {
       const fetchStart = toLocalDateString(fetchStartDate);
       const fetchEnd = toLocalDateString(endDate);
-      console.log(`[Timeline] Fetching sessions: timeRange=${timeRange}, startDate=${fetchStart}, endDate=${fetchEnd}, shouldUseGridView=${shouldUseGridView}`);
-      return fetch(`/api/reading-sessions?startDate=${fetchStart}&endDate=${fetchEnd}`, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      }).then(res => res.json());
+      return apiRequest("GET", `/api/reading-sessions?startDate=${fetchStart}&endDate=${fetchEnd}`);
     },
-    staleTime: 0,
   });
 
-  const currentBooks = books.filter(book => book.status === "reading");
-  const completedBooks = books.filter(book => book.status === "completed");
-  
   // Filter books to only show those with sessions in the current time range
-  const booksWithSessionsInRange = books.filter(book => {
-    return sessions.some(session => session.bookId === book.id);
-  });
-  
+  const booksWithSessionsInRange = useMemo(() => {
+    const sessionBookIds = new Set(sessions.map(s => s.bookId));
+    return books.filter(book => sessionBookIds.has(book.id));
+  }, [books, sessions]);
 
+  // Group sessions by date for faster lookup
+  const sessionsByDate = useMemo(() => {
+    const map = new Map<string, ReadingSession[]>();
+    for (const session of sessions) {
+      if (!map.has(session.date)) {
+        map.set(session.date, []);
+      }
+      map.get(session.date)!.push(session);
+    }
+    return map;
+  }, [sessions]);
 
   // Generate timeline data
-  const generateTimelineData = () => {
+  const timelineData = useMemo(() => {
     const timeline = [];
     // For grid view, start from fetchStartDate to include padding days
     // For ribbon view, use the regular startDate
@@ -140,7 +134,7 @@ export default function ReadingTimeline({
     
     while (current <= endDate) {
       const dateStr = toLocalDateString(current);
-      const daySessions = sessions.filter(session => session.date === dateStr);
+      const daySessions = sessionsByDate.get(dateStr) || [];
       
       timeline.push({
         date: dateStr,
@@ -152,9 +146,7 @@ export default function ReadingTimeline({
     }
 
     return timeline;
-  };
-
-  const timelineData = generateTimelineData();
+  }, [sessionsByDate, fetchStartDate, startDate, endDate, shouldUseGridView]);
 
   const getDateLabels = () => {
     const totalDays = timelineData.length;
@@ -223,123 +215,104 @@ export default function ReadingTimeline({
     return segments;
   };
 
-  const generateGridData = () => {
+  const yearlyGridData = useMemo(() => {
     if (timelineData.length === 0) return [];
 
     // Create a map for quick lookup of timeline data
     const dayMap = new Map(timelineData.map(day => [day.date, day]));
 
     // Pre-compute book lookup Map for O(1) lookups instead of O(n) find() calls
-    // This improves complexity from O(n×m×k) to O(m×k) where:
-    // n = total books, m = total days, k = avg books per day
     const bookMap = new Map(books.map(b => [b.id, b]));
 
     // Use the startDate and endDate props passed from parent (home.tsx)
-    // For "All Time" selection, startDate will be 1970-01-01 and endDate will be current date
     const gridDataStartDate = new Date(startDate.getTime());
     const gridDataEndDate = new Date(endDate.getTime());
 
-    // Generate a complete year range from the props
+    // Only generate years that are within our timelineData range
+    const sessionDates = sessions.map(s => s.date).sort();
+    if (sessionDates.length === 0) return [];
+
+    const firstYearWithData = new Date(sessionDates[0] + 'T00:00:00').getFullYear();
+    const lastYearWithData = new Date(sessionDates[sessionDates.length - 1] + 'T00:00:00').getFullYear();
+
     const years: number[] = [];
-    const startYear = gridDataStartDate.getFullYear();
-    const endYear = gridDataEndDate.getFullYear();
-    for (let y = endYear; y >= startYear; y--) {
+    for (let y = lastYearWithData; y >= firstYearWithData; y--) {
       years.push(y);
     }
 
-    const yearlyGrids = years.map((year) => {
-        // Create a complete year's worth of data, not just reading session dates
-        // This ensures all 12 months are displayed for each year
-        const yearStartDate = new Date(year, 0, 1);
-        const yearEndDate = new Date(year, 11, 31);
+    return years.map((year) => {
+      const yearStartDate = new Date(year, 0, 1);
+      const yearEndDate = new Date(year, 11, 31);
 
-        // Clamp to the overall date range
-        const yearGridStartDate = new Date(Math.max(yearStartDate.getTime(), gridDataStartDate.getTime()));
-        const yearGridEndDate = new Date(Math.min(yearEndDate.getTime(), gridDataEndDate.getTime()));
+      const yearGridStartDate = new Date(Math.max(yearStartDate.getTime(), gridDataStartDate.getTime()));
+      const yearGridEndDate = new Date(Math.min(yearEndDate.getTime(), gridDataEndDate.getTime()));
 
-        // Find the Sunday before our start date
-        const gridStartDate = new Date(yearGridStartDate);
-        gridStartDate.setDate(yearGridStartDate.getDate() - yearGridStartDate.getDay());
+      const gridStartDate = new Date(yearGridStartDate);
+      gridStartDate.setDate(yearGridStartDate.getDate() - yearGridStartDate.getDay());
 
-        // Generate weeks
-        const weeks: any[][] = [];
-        const monthLabels: { month: string; weekIndex: number }[] = [];
-        let currentDate = new Date(gridStartDate);
-        let currentMonth = -1;
-        let weekIndex = 0;
+      const weeks: any[][] = [];
+      const monthLabels: { month: string; weekIndex: number }[] = [];
+      let currentDate = new Date(gridStartDate);
+      let currentMonth = -1;
+      let weekIndex = 0;
 
-        while (currentDate <= yearGridEndDate) {
-          const week: any[] = new Array(7).fill(null);
+      while (currentDate <= yearGridEndDate) {
+        const week: any[] = new Array(7).fill(null);
 
-          for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-            if (currentDate >= yearGridStartDate && currentDate <= yearGridEndDate && currentDate.getMonth() !== currentMonth) {
-              currentMonth = currentDate.getMonth();
-              monthLabels.push({
-                month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
-                weekIndex: weekIndex
-              });
-            }
-
-            const dateStr = toLocalDateString(currentDate);
-            const actualDayOfWeek = currentDate.getDay();
-            const dayData = dayMap.get(dateStr);
-
-            if (dayData) {
-              const bookIds = dayData.sessions.map((s: ReadingSession) => s.bookId);
-              const uniqueBookIds = [...new Set(bookIds)];
-              // Use O(1) Map lookup instead of O(n) find()
-              const dayBooks = uniqueBookIds.map(id => bookMap.get(id)).filter(Boolean) as Book[];
-              // Safely extract colors with fallback for missing/invalid data
-              const colors = dayBooks.map(b => b.color);
-
-              // Pre-compute dateTitle to avoid Date object creation in render loop
-              // This calculation happens once during data generation, not on every render
-              const dateTitle = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-              week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading, dateTitle };
-            } else {
-              const isInRange = currentDate >= yearGridStartDate && currentDate <= yearGridEndDate;
-              // Pre-compute dateTitle to avoid Date object creation in render loop
-              const dateTitle = isInRange ? new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-
-              week[actualDayOfWeek] = { date: isInRange ? dateStr : '', isEmpty: !isInRange, sessions: [], colors: [], hasReading: false, dateTitle };
-            }
-
-            currentDate.setDate(currentDate.getDate() + 1);
+        for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+          if (currentDate >= yearGridStartDate && currentDate <= yearGridEndDate && currentDate.getMonth() !== currentMonth) {
+            currentMonth = currentDate.getMonth();
+            monthLabels.push({
+              month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+              weekIndex: weekIndex
+            });
           }
 
-          for (let i = 0; i < 7; i++) {
-            if (week[i] === null) {
-              week[i] = { date: '', isEmpty: true, sessions: [], colors: [], hasReading: false, dateTitle: '' };
-            }
+          const dateStr = toLocalDateString(currentDate);
+          const actualDayOfWeek = currentDate.getDay();
+          const dayData = dayMap.get(dateStr);
+
+          if (dayData) {
+            const bookIds = dayData.sessions.map((s: ReadingSession) => s.bookId);
+            const uniqueBookIds = [...new Set(bookIds)];
+            const dayBooks = uniqueBookIds.map(id => bookMap.get(id)).filter(Boolean) as Book[];
+            const colors = dayBooks.map(b => b.color);
+            const dateTitle = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+            week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading, dateTitle };
+          } else {
+            const isInRange = currentDate >= yearGridStartDate && currentDate <= yearGridEndDate;
+            const dateTitle = isInRange ? new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+
+            week[actualDayOfWeek] = { date: isInRange ? dateStr : '', isEmpty: !isInRange, sessions: [], colors: [], hasReading: false, dateTitle };
           }
 
-          weeks.push(week);
-          weekIndex++;
+          currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // Process month labels for this year's grid
-        const processedMonthLabels: { month: string; weekIndex: number; left: number }[] = [];
-        let lastLeft = -Infinity;
-        const LABEL_SPACING = 30;
-        monthLabels.forEach(label => {
-          const idealLeft = label.weekIndex * 16;
-          const newLeft = Math.max(idealLeft, lastLeft + LABEL_SPACING);
-          processedMonthLabels.push({ ...label, left: newLeft });
-          lastLeft = newLeft;
-        });
+        for (let i = 0; i < 7; i++) {
+          if (week[i] === null) {
+            week[i] = { date: '', isEmpty: true, sessions: [], colors: [], hasReading: false, dateTitle: '' };
+          }
+        }
 
-        return { year: parseInt(year), weeks, monthLabels: processedMonthLabels };
-      })
-      .filter((grid) => {
-        // Only show years that have at least one reading session
-        return grid.weeks.some(week => week.some(day => day && day.hasReading));
+        weeks.push(week);
+        weekIndex++;
+      }
+
+      const processedMonthLabels: { month: string; weekIndex: number; left: number }[] = [];
+      let lastLeft = -Infinity;
+      const LABEL_SPACING = 30;
+      monthLabels.forEach(label => {
+        const idealLeft = label.weekIndex * 16;
+        const newLeft = Math.max(idealLeft, lastLeft + LABEL_SPACING);
+        processedMonthLabels.push({ ...label, left: newLeft });
+        lastLeft = newLeft;
       });
 
-    return yearlyGrids;
-  };
-
-  const yearlyGridData = generateGridData();
+      return { year, weeks, monthLabels: processedMonthLabels };
+    });
+  }, [timelineData, books, sessions, startDate, endDate]);
 
   return (
     <section className="mb-12" data-testid="reading-timeline-section">

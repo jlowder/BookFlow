@@ -203,6 +203,11 @@ export class SQLiteStorage implements IStorage {
         FOREIGN KEY (bookId) REFERENCES books (id) ON DELETE CASCADE
       )
     `);
+
+    // Create index on date for faster range queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_reading_sessions_date ON reading_sessions (date)
+    `);
   }
 
   async getBooks(): Promise<Book[]> {
@@ -450,6 +455,20 @@ export class SQLiteStorage implements IStorage {
     // books per year = (avg pages per day * 365) / avg pages per book
     const booksPerYear = avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
     return Math.round(booksPerYear * 10) / 10;
+  }
+
+  async getEarliestRecordDate(): Promise<string | null> {
+    const sessionStmt = this.db.prepare('SELECT MIN(date) as minDate FROM reading_sessions');
+    const sessionResult = sessionStmt.get() as { minDate: string | null };
+
+    const bookStmt = this.db.prepare('SELECT MIN(startDate) as minDate FROM books');
+    const bookResult = bookStmt.get() as { minDate: string | null };
+
+    if (!sessionResult.minDate && !bookResult.minDate) return null;
+    if (!sessionResult.minDate) return bookResult.minDate;
+    if (!bookResult.minDate) return sessionResult.minDate;
+
+    return sessionResult.minDate < bookResult.minDate ? sessionResult.minDate : bookResult.minDate;
   }
 
   async clearAllData(): Promise<void> {
