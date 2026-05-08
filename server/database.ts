@@ -169,6 +169,7 @@ export class SQLiteStorage implements IStorage {
       this.db.pragma('synchronous = NORMAL');
       this.db.pragma('temp_store = MEMORY');
       this.db.pragma('cache_size = -2000'); // ~2MB cache
+      this.db.pragma('busy_timeout = 5000'); // Wait up to 5s if DB is locked
 
       console.log(`[SQLiteStorage] Database opened successfully with optimizations`);
       this.initializeTables();

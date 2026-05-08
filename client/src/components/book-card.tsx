@@ -40,6 +40,7 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       const today = toLocalDateString(new Date());
       await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
       await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
+
       const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
       const previousStats = queryClient.getQueryData<any>(["/api/stats", today]);
 
@@ -51,21 +52,23 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
         duration: 30,
       };
 
-      queryClient.setQueryData(["/api/reading-sessions"], (old: any[] | undefined) =>
-        old ? [...old, optimisticSession] : [optimisticSession]
-      );
-
-      queryClient.setQueryData(["/api/reading-sessions", today], (old: any[] | undefined) =>
-        old ? [...old, optimisticSession] : [optimisticSession]
-      );
+      // Optimistically update all session queries
+      queryClient.setQueriesData({ queryKey: ["/api/reading-sessions"] }, (old: any[] | undefined) => {
+        if (!old) return [optimisticSession];
+        // For range-based queries, we should check if today is within range,
+        // but for simplicity we'll just add it if it's not already there
+        if (old.some(s => s.id === -1 && s.bookId === book.id && s.date === today)) return old;
+        return [...old, optimisticSession];
+      });
 
       // Optimistically update stats
-      if (previousStats) {
-        queryClient.setQueryData(["/api/stats", today], {
-          ...previousStats,
-          streak: previousStats.streak === 0 ? 1 : previousStats.streak
-        });
-      }
+      queryClient.setQueriesData({ queryKey: ["/api/stats"] }, (old: any | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          streak: (old.streak === 0) ? 1 : old.streak
+        };
+      });
 
       return { previousSessions, previousStats };
     },
@@ -79,16 +82,6 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       if (context?.previousSessions) {
         queryClient.setQueryData(["/api/reading-sessions"], context.previousSessions);
       }
-      if (context?.previousStats) {
-        const today = toLocalDateString(new Date());
-        queryClient.setQueryData(["/api/stats", today], context.previousStats);
-      }
-      toast({
-        title: "Error",
-        description: "Failed to record reading session",
-        variant: "destructive",
-      });
-    },
       toast({
         title: "Error",
         description: "Failed to record reading session",
@@ -109,13 +102,8 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
       await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
       const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
-      const today = toLocalDateString(new Date());
 
-      queryClient.setQueryData(["/api/reading-sessions"], (old: any[] | undefined) =>
-        old ? old.filter(s => s.id !== id) : []
-      );
-
-      queryClient.setQueryData(["/api/reading-sessions", today], (old: any[] | undefined) =>
+      queryClient.setQueriesData({ queryKey: ["/api/reading-sessions"] }, (old: any[] | undefined) =>
         old ? old.filter(s => s.id !== id) : []
       );
 

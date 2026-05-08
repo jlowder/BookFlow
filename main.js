@@ -72,6 +72,10 @@ function startServer() {
   }
 }
 
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+
 app.on('ready', () => {
   startServer();
   createWindow();
