@@ -79,6 +79,16 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       if (context?.previousSessions) {
         queryClient.setQueryData(["/api/reading-sessions"], context.previousSessions);
       }
+      if (context?.previousStats) {
+        const today = toLocalDateString(new Date());
+        queryClient.setQueryData(["/api/stats", today], context.previousStats);
+      }
+      toast({
+        title: "Error",
+        description: "Failed to record reading session",
+        variant: "destructive",
+      });
+    },
       toast({
         title: "Error",
         description: "Failed to record reading session",
