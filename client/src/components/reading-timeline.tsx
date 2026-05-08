@@ -55,20 +55,41 @@ export default function ReadingTimeline({
         });
       }
     },
+    onMutate: async ({ bookId, date, hasSession }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
+      const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
+
+      queryClient.setQueryData(["/api/reading-sessions"], (old: any[] | undefined) => {
+        if (!old) return hasSession ? [] : [{ id: -1, bookId, date, pagesRead: 1, duration: 30 }];
+        if (hasSession) {
+          return old.filter(s => !(s.bookId === bookId && s.date === date));
+        } else {
+          return [...old, { id: -1, bookId, date, pagesRead: 1, duration: 30 }];
+        }
+      });
+
+      return { previousSessions };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
       toast({
         title: "Reading session updated",
         description: "Your reading progress has been updated",
       });
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(["/api/reading-sessions"], context.previousSessions);
+      }
       toast({
         title: "Error",
         description: "Failed to update reading session",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
   });
 

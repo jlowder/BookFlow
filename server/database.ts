@@ -163,7 +163,14 @@ export class SQLiteStorage implements IStorage {
     try {
       console.log(`[SQLiteStorage] Attempting to open database at: ${dbPath}`);
       this.db = new Database(dbPath);
-      console.log(`[SQLiteStorage] Database opened successfully`);
+
+      // Optimization: Enable Write-Ahead Logging for better concurrency and performance
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
+      this.db.pragma('temp_store = MEMORY');
+      this.db.pragma('cache_size = -2000'); // ~2MB cache
+
+      console.log(`[SQLiteStorage] Database opened successfully with optimizations`);
       this.initializeTables();
     } catch (error) {
       console.error(`[SQLiteStorage] Failed to open database at ${dbPath}:`, error);
@@ -366,29 +373,22 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getReadingStreak(today: string): Promise<number> {
-    const stmt = this.db.prepare('SELECT DISTINCT date FROM reading_sessions ORDER BY date DESC');
-    const results = stmt.all() as { date: string }[];
-    const dates = new Set(results.map(r => r.date));
-
-    if (dates.size === 0) {
-      return 0;
-    }
+    // Optimization: Use a single query to find the streak by finding the largest set of consecutive dates
+    // that includes today.
+    const stmt = this.db.prepare(`
+      WITH RECURSIVE streak_dates(d) AS (
+        SELECT ?
+        WHERE EXISTS (SELECT 1 FROM reading_sessions WHERE date = ?)
+        UNION ALL
+        SELECT date(d, '-1 day')
+        FROM streak_dates
+        JOIN reading_sessions ON reading_sessions.date = date(d, '-1 day')
+      )
+      SELECT COUNT(*) as count FROM streak_dates
+    `);
     
-    let currentDate = today;
-    if (!dates.has(currentDate)) {
-      return 0;
-    }
-
-    let streak = 0;
-    // Loop backwards from the current date to calculate the streak
-    while (dates.has(currentDate)) {
-      streak++;
-      const prevDate = parseLocalDate(currentDate);
-      prevDate.setDate(prevDate.getDate() - 1);
-      currentDate = toLocalDateString(prevDate);
-    }
-
-    return streak;
+    const result = stmt.get(today, today) as { count: number };
+    return result.count;
   }
 
   async getTotalBooksRead(): Promise<number> {
@@ -398,29 +398,26 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getAveragePagesPerDay(today: string): Promise<number> {
-    // Get the earliest completed date and total pages in a single query
+    // Optimization: Calculate everything in SQL if possible
     const stmt = this.db.prepare(`
-      SELECT MIN(completedDate) as earliestDate, SUM(totalPages) as totalPages 
+      SELECT
+        MIN(completedDate) as earliestDate,
+        SUM(totalPages) as totalPages
       FROM books 
-      WHERE status = ? AND totalPages IS NOT NULL AND completedDate IS NOT NULL
+      WHERE status = 'completed' AND totalPages IS NOT NULL AND completedDate IS NOT NULL
     `);
-    const result = stmt.get('completed') as { earliestDate: string | null; totalPages: number | null };
+    const result = stmt.get() as { earliestDate: string | null; totalPages: number | null };
     
-    if (!result.earliestDate || result.totalPages === 0) {
+    if (!result.earliestDate || !result.totalPages) {
       return 0;
     }
     
-    // Calculate days between earliest completed book and today
-    const firstDate = parseLocalDate(result.earliestDate);
-    const todayDate = parseLocalDate(today);
-    const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate difference in days using SQLite date functions
+    const diffStmt = this.db.prepare("SELECT (julianday(?) - julianday(?)) + 1 as diff");
+    const diffResult = diffStmt.get(today, result.earliestDate) as { diff: number };
     
-    if (diffDays === 0) {
-      return 0;
-    }
-    
-    return Math.round((result.totalPages! / diffDays) * 100) / 100;
+    const diffDays = Math.max(1, Math.ceil(diffResult.diff));
+    return Math.round((result.totalPages / diffDays) * 100) / 100;
   }
 
   async getTotalPagesRead(): Promise<number> {

@@ -24,7 +24,8 @@ function createWindow() {
   // Use the port defined in server/index.ts
   const port = process.env.NODE_ENV === 'development' ? 5000 : 3000;
 
-  const url = `http://localhost:${port}`;
+  // Use 127.0.0.1 instead of localhost to avoid IPv6 resolution delays
+  const url = `http://127.0.0.1:${port}`;
 
   waitOn({
     resources: [url],
