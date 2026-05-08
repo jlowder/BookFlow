@@ -58,11 +58,15 @@ app.use((req, res, next) => {
 
   // Use PORT environment variable if provided, default based on NODE_ENV
   const port = parseInt(process.env.PORT || (process.env.NODE_ENV === "production" ? "3000" : "5000"), 10);
+
+  // Optimization: When running in Electron, bind to 127.0.0.1 and disable reusePort
+  // to minimize network stack overhead and potential security issues.
+  const isElectron = process.env.IS_ELECTRON === 'true';
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: isElectron ? "127.0.0.1" : "0.0.0.0",
+    reusePort: !isElectron,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on port ${port} ${isElectron ? '(Electron mode)' : ''}`);
   });
 })();

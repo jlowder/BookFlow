@@ -40,8 +40,9 @@ export default function ReadingTimeline({
     mutationFn: async ({ bookId, date, hasSession }: { bookId: number; date: string; hasSession: boolean }) => {
       if (hasSession) {
         // Find and delete the session for this book on this date
-        const sessions = await fetch(`/api/reading-sessions?date=${date}`).then(r => r.json());
-        const sessionToDelete = sessions.find((s: any) => s.bookId === bookId);
+        // Use the memoized sessionsByDate for efficiency
+        const currentSessions = sessionsByDate.get(date) || [];
+        const sessionToDelete = currentSessions.find((s: any) => s.bookId === bookId);
         if (sessionToDelete) {
           await apiRequest("DELETE", `/api/reading-sessions/${sessionToDelete.id}`);
         }

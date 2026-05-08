@@ -37,12 +37,12 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       });
     },
     onMutate: async () => {
+      const today = toLocalDateString(new Date());
       await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
       await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
       const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
-      const previousStats = queryClient.getQueryData<any>(["/api/stats", toLocalDateString(new Date())]);
+      const previousStats = queryClient.getQueryData<any>(["/api/stats", today]);
 
-      const today = toLocalDateString(new Date());
       const optimisticSession = {
         id: -1,
         bookId: book.id,
@@ -58,6 +58,14 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
       queryClient.setQueryData(["/api/reading-sessions", today], (old: any[] | undefined) =>
         old ? [...old, optimisticSession] : [optimisticSession]
       );
+
+      // Optimistically update stats
+      if (previousStats) {
+        queryClient.setQueryData(["/api/stats", today], {
+          ...previousStats,
+          streak: previousStats.streak === 0 ? 1 : previousStats.streak
+        });
+      }
 
       return { previousSessions, previousStats };
     },

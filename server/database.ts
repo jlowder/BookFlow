@@ -468,6 +468,57 @@ export class SQLiteStorage implements IStorage {
     return sessionResult.minDate < bookResult.minDate ? sessionResult.minDate : bookResult.minDate;
   }
 
+  async getDashboardStats(today: string): Promise<any> {
+    // Single complex query to get multiple stats at once
+    const statsStmt = this.db.prepare(`
+      SELECT
+        (
+          WITH RECURSIVE streak_dates(d) AS (
+            SELECT ? WHERE EXISTS (SELECT 1 FROM reading_sessions WHERE date = ?)
+            UNION ALL
+            SELECT date(d, '-1 day') FROM streak_dates
+            JOIN reading_sessions ON reading_sessions.date = date(d, '-1 day')
+          ) SELECT COUNT(*) FROM streak_dates
+        ) as streak,
+        (SELECT COUNT(*) FROM books WHERE status = 'completed') as totalBooks,
+        (SELECT SUM(totalPages) FROM books WHERE status = 'completed') as totalPages,
+        (SELECT AVG(totalPages) FROM books WHERE status = 'completed' AND totalPages IS NOT NULL) as avgPagesPerBook,
+        (SELECT SUM(totalPages - currentPage) FROM books WHERE status = 'reading') as pagesRemaining,
+        (SELECT MIN(completedDate) FROM books WHERE status = 'completed' AND completedDate IS NOT NULL) as earliestCompletedDate,
+        (SELECT MIN(date) FROM reading_sessions) as earliestSessionDate,
+        (SELECT MIN(startDate) FROM books WHERE startDate IS NOT NULL) as earliestStartDate
+    `);
+
+    const stats = statsStmt.get(today, today) as any;
+
+    const earliestRecord = [stats.earliestSessionDate, stats.earliestStartDate]
+      .filter(Boolean)
+      .sort()[0] || null;
+
+    // Calculate avgPagesPerDay
+    let avgPages = 0;
+    if (stats.earliestCompletedDate && stats.totalPages) {
+      const diffStmt = this.db.prepare("SELECT (julianday(?) - julianday(?)) + 1 as diff");
+      const diffResult = diffStmt.get(today, stats.earliestCompletedDate) as { diff: number };
+      const diffDays = Math.max(1, Math.ceil(diffResult.diff));
+      avgPages = Math.round((stats.totalPages / diffDays) * 100) / 100;
+    }
+
+    // Calculate booksPerYear
+    const booksPerYear = stats.avgPagesPerBook > 0 ? Math.round(((avgPages * 365) / stats.avgPagesPerBook) * 10) / 10 : 0;
+
+    return {
+      streak: stats.streak || 0,
+      totalBooks: stats.totalBooks || 0,
+      avgPages,
+      totalPages: stats.totalPages || 0,
+      pagesRemaining: stats.pagesRemaining || 0,
+      avgPagesPerBook: Math.round((stats.avgPagesPerBook || 0) * 100) / 100,
+      booksPerYear,
+      earliestRecord
+    };
+  }
+
   async clearAllData(): Promise<void> {
     console.log('[SQLiteStorage] Clearing all data...');
     

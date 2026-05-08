@@ -17,6 +17,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
     icon: path.join(__dirname, 'generated-icon.png'),
   });

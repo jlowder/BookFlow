@@ -40,6 +40,7 @@ export interface IStorage {
   getTotalPagesRead(): Promise<number>;
   getPagesRemainingInCurrentlyReading(): Promise<number>;
   getEarliestRecordDate(): Promise<string | null>;
+  getDashboardStats(today: string): Promise<any>;
 
   // Data management
   clearAllData(): Promise<void>;
@@ -291,6 +292,21 @@ export class MemStorage implements IStorage {
 
     const dates = [...sessionDates, ...bookDates].sort();
     return dates.length > 0 ? dates[0] : null;
+  }
+
+  async getDashboardStats(today: string): Promise<any> {
+    const [streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear, earliestRecord] = await Promise.all([
+      this.getReadingStreak(today),
+      this.getTotalBooksRead(),
+      this.getAveragePagesPerDay(today),
+      this.getTotalPagesRead(),
+      this.getPagesRemainingInCurrentlyReading(),
+      this.getAveragePagesPerBook(),
+      this.getBooksPerYear(today),
+      this.getEarliestRecordDate()
+    ]);
+
+    return { streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear, earliestRecord };
   }
 
   async clearAllData(): Promise<void> {
