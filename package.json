@@ -132,12 +132,12 @@
     "files": [
       "dist/**/*",
       "main.js",
-      "package.json",
-      "generated-icon.png"
+      "package.json"
     ],
     "linux": {
       "target": "AppImage",
-      "category": "Office"
+      "category": "Office",
+      "icon": "generated-icon.png"
     }
   }
 }

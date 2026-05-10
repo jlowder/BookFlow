@@ -89,12 +89,6 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
         variant: "destructive",
       });
     },
-      toast({
-        title: "Error",
-        description: "Failed to record reading session",
-        variant: "destructive",
-      });
-    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
