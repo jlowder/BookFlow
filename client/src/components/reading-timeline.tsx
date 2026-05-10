@@ -61,7 +61,7 @@ export default function ReadingTimeline({
       await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
       const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
 
-      queryClient.setQueryData(["/api/reading-sessions"], (old: any[] | undefined) => {
+      queryClient.setQueriesData({ queryKey: ["/api/reading-sessions"] }, (old: any[] | undefined) => {
         if (!old) return hasSession ? [] : [{ id: -1, bookId, date, pagesRead: 1, duration: 30 }];
         if (hasSession) {
           return old.filter(s => !(s.bookId === bookId && s.date === date));
