@@ -39,6 +39,8 @@ export interface IStorage {
   getAveragePagesPerDay(today: string): Promise<number>;
   getTotalPagesRead(): Promise<number>;
   getPagesRemainingInCurrentlyReading(): Promise<number>;
+  getEarliestRecordDate(): Promise<string | null>;
+  getDashboardStats(today: string): Promise<any>;
 
   // Data management
   clearAllData(): Promise<void>;
@@ -278,6 +280,33 @@ export class MemStorage implements IStorage {
     const booksPerYear =
       avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
     return Math.round(booksPerYear * 10) / 10;
+  }
+
+  async getEarliestRecordDate(): Promise<string | null> {
+    const sessions = Array.from(this.readingSessions.values());
+    const sessionDates = sessions.map(s => s.date).sort();
+
+    const books = Array.from(this.books.values());
+    const bookDates = books.map(b => b.startDate).filter(Boolean) as string[];
+    bookDates.sort();
+
+    const dates = [...sessionDates, ...bookDates].sort();
+    return dates.length > 0 ? dates[0] : null;
+  }
+
+  async getDashboardStats(today: string): Promise<any> {
+    const [streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear, earliestRecord] = await Promise.all([
+      this.getReadingStreak(today),
+      this.getTotalBooksRead(),
+      this.getAveragePagesPerDay(today),
+      this.getTotalPagesRead(),
+      this.getPagesRemainingInCurrentlyReading(),
+      this.getAveragePagesPerBook(),
+      this.getBooksPerYear(today),
+      this.getEarliestRecordDate()
+    ]);
+
+    return { streak, totalBooks, avgPages, totalPages, pagesRemaining, avgPagesPerBook, booksPerYear, earliestRecord };
   }
 
   async clearAllData(): Promise<void> {

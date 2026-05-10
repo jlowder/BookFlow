@@ -17,6 +17,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
     },
     icon: path.join(__dirname, 'generated-icon.png'),
   });
@@ -24,7 +25,8 @@ function createWindow() {
   // Use the port defined in server/index.ts
   const port = process.env.NODE_ENV === 'development' ? 5000 : 3000;
 
-  const url = `http://localhost:${port}`;
+  // Use 127.0.0.1 instead of localhost to avoid IPv6 resolution delays
+  const url = `http://127.0.0.1:${port}`;
 
   waitOn({
     resources: [url],
@@ -69,6 +71,10 @@ function startServer() {
     serverProcess = fork(serverPath, [], options);
   }
 }
+
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 app.on('ready', () => {
   startServer();

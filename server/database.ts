@@ -163,7 +163,15 @@ export class SQLiteStorage implements IStorage {
     try {
       console.log(`[SQLiteStorage] Attempting to open database at: ${dbPath}`);
       this.db = new Database(dbPath);
-      console.log(`[SQLiteStorage] Database opened successfully`);
+
+      // Optimization: Enable Write-Ahead Logging for better concurrency and performance
+      this.db.pragma('journal_mode = WAL');
+      this.db.pragma('synchronous = NORMAL');
+      this.db.pragma('temp_store = MEMORY');
+      this.db.pragma('cache_size = -2000'); // ~2MB cache
+      this.db.pragma('busy_timeout = 5000'); // Wait up to 5s if DB is locked
+
+      console.log(`[SQLiteStorage] Database opened successfully with optimizations`);
       this.initializeTables();
     } catch (error) {
       console.error(`[SQLiteStorage] Failed to open database at ${dbPath}:`, error);
@@ -202,6 +210,11 @@ export class SQLiteStorage implements IStorage {
         notes TEXT,
         FOREIGN KEY (bookId) REFERENCES books (id) ON DELETE CASCADE
       )
+    `);
+
+    // Create index on date for faster range queries
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_reading_sessions_date ON reading_sessions (date)
     `);
   }
 
@@ -361,29 +374,22 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getReadingStreak(today: string): Promise<number> {
-    const stmt = this.db.prepare('SELECT DISTINCT date FROM reading_sessions ORDER BY date DESC');
-    const results = stmt.all() as { date: string }[];
-    const dates = new Set(results.map(r => r.date));
-
-    if (dates.size === 0) {
-      return 0;
-    }
+    // Optimization: Use a single query to find the streak by finding the largest set of consecutive dates
+    // that includes today.
+    const stmt = this.db.prepare(`
+      WITH RECURSIVE streak_dates(d) AS (
+        SELECT ?
+        WHERE EXISTS (SELECT 1 FROM reading_sessions WHERE date = ?)
+        UNION ALL
+        SELECT date(d, '-1 day')
+        FROM streak_dates
+        JOIN reading_sessions ON reading_sessions.date = date(d, '-1 day')
+      )
+      SELECT COUNT(*) as count FROM streak_dates
+    `);
     
-    let currentDate = today;
-    if (!dates.has(currentDate)) {
-      return 0;
-    }
-
-    let streak = 0;
-    // Loop backwards from the current date to calculate the streak
-    while (dates.has(currentDate)) {
-      streak++;
-      const prevDate = parseLocalDate(currentDate);
-      prevDate.setDate(prevDate.getDate() - 1);
-      currentDate = toLocalDateString(prevDate);
-    }
-
-    return streak;
+    const result = stmt.get(today, today) as { count: number };
+    return result.count;
   }
 
   async getTotalBooksRead(): Promise<number> {
@@ -393,29 +399,26 @@ export class SQLiteStorage implements IStorage {
   }
 
   async getAveragePagesPerDay(today: string): Promise<number> {
-    // Get the earliest completed date and total pages in a single query
+    // Optimization: Calculate everything in SQL if possible
     const stmt = this.db.prepare(`
-      SELECT MIN(completedDate) as earliestDate, SUM(totalPages) as totalPages 
+      SELECT
+        MIN(completedDate) as earliestDate,
+        SUM(totalPages) as totalPages
       FROM books 
-      WHERE status = ? AND totalPages IS NOT NULL AND completedDate IS NOT NULL
+      WHERE status = 'completed' AND totalPages IS NOT NULL AND completedDate IS NOT NULL
     `);
-    const result = stmt.get('completed') as { earliestDate: string | null; totalPages: number | null };
+    const result = stmt.get() as { earliestDate: string | null; totalPages: number | null };
     
-    if (!result.earliestDate || result.totalPages === 0) {
+    if (!result.earliestDate || !result.totalPages) {
       return 0;
     }
     
-    // Calculate days between earliest completed book and today
-    const firstDate = parseLocalDate(result.earliestDate);
-    const todayDate = parseLocalDate(today);
-    const diffTime = Math.abs(todayDate.getTime() - firstDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate difference in days using SQLite date functions
+    const diffStmt = this.db.prepare("SELECT (julianday(?) - julianday(?)) + 1 as diff");
+    const diffResult = diffStmt.get(today, result.earliestDate) as { diff: number };
     
-    if (diffDays === 0) {
-      return 0;
-    }
-    
-    return Math.round((result.totalPages! / diffDays) * 100) / 100;
+    const diffDays = Math.max(1, Math.ceil(diffResult.diff));
+    return Math.round((result.totalPages / diffDays) * 100) / 100;
   }
 
   async getTotalPagesRead(): Promise<number> {
@@ -450,6 +453,71 @@ export class SQLiteStorage implements IStorage {
     // books per year = (avg pages per day * 365) / avg pages per book
     const booksPerYear = avgPagesPerBook > 0 ? (avgPagesPerDay * 365) / avgPagesPerBook : 0;
     return Math.round(booksPerYear * 10) / 10;
+  }
+
+  async getEarliestRecordDate(): Promise<string | null> {
+    const sessionStmt = this.db.prepare('SELECT MIN(date) as minDate FROM reading_sessions');
+    const sessionResult = sessionStmt.get() as { minDate: string | null };
+
+    const bookStmt = this.db.prepare('SELECT MIN(startDate) as minDate FROM books');
+    const bookResult = bookStmt.get() as { minDate: string | null };
+
+    if (!sessionResult.minDate && !bookResult.minDate) return null;
+    if (!sessionResult.minDate) return bookResult.minDate;
+    if (!bookResult.minDate) return sessionResult.minDate;
+
+    return sessionResult.minDate < bookResult.minDate ? sessionResult.minDate : bookResult.minDate;
+  }
+
+  async getDashboardStats(today: string): Promise<any> {
+    // Single complex query to get multiple stats at once
+    const statsStmt = this.db.prepare(`
+      SELECT
+        (
+          WITH RECURSIVE streak_dates(d) AS (
+            SELECT ? WHERE EXISTS (SELECT 1 FROM reading_sessions WHERE date = ?)
+            UNION ALL
+            SELECT date(d, '-1 day') FROM streak_dates
+            JOIN reading_sessions ON reading_sessions.date = date(d, '-1 day')
+          ) SELECT COUNT(*) FROM streak_dates
+        ) as streak,
+        (SELECT COUNT(*) FROM books WHERE status = 'completed') as totalBooks,
+        (SELECT SUM(totalPages) FROM books WHERE status = 'completed') as totalPages,
+        (SELECT AVG(totalPages) FROM books WHERE status = 'completed' AND totalPages IS NOT NULL) as avgPagesPerBook,
+        (SELECT SUM(totalPages - currentPage) FROM books WHERE status = 'reading') as pagesRemaining,
+        (SELECT MIN(completedDate) FROM books WHERE status = 'completed' AND completedDate IS NOT NULL) as earliestCompletedDate,
+        (SELECT MIN(date) FROM reading_sessions) as earliestSessionDate,
+        (SELECT MIN(startDate) FROM books WHERE startDate IS NOT NULL) as earliestStartDate
+    `);
+
+    const stats = statsStmt.get(today, today) as any;
+
+    const earliestRecord = [stats.earliestSessionDate, stats.earliestStartDate]
+      .filter(Boolean)
+      .sort()[0] || null;
+
+    // Calculate avgPagesPerDay
+    let avgPages = 0;
+    if (stats.earliestCompletedDate && stats.totalPages) {
+      const diffStmt = this.db.prepare("SELECT (julianday(?) - julianday(?)) + 1 as diff");
+      const diffResult = diffStmt.get(today, stats.earliestCompletedDate) as { diff: number };
+      const diffDays = Math.max(1, Math.ceil(diffResult.diff));
+      avgPages = Math.round((stats.totalPages / diffDays) * 100) / 100;
+    }
+
+    // Calculate booksPerYear
+    const booksPerYear = stats.avgPagesPerBook > 0 ? Math.round(((avgPages * 365) / stats.avgPagesPerBook) * 10) / 10 : 0;
+
+    return {
+      streak: stats.streak || 0,
+      totalBooks: stats.totalBooks || 0,
+      avgPages,
+      totalPages: stats.totalPages || 0,
+      pagesRemaining: stats.pagesRemaining || 0,
+      avgPagesPerBook: Math.round((stats.avgPagesPerBook || 0) * 100) / 100,
+      booksPerYear,
+      earliestRecord
+    };
   }
 
   async clearAllData(): Promise<void> {

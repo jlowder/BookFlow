@@ -29,7 +29,6 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
   const markReadMutation = useMutation({
     mutationFn: () => {
       const todayLocal = toLocalDateString(new Date());
-      
       return apiRequest("POST", "/api/reading-sessions", {
         bookId: book.id,
         date: todayLocal,
@@ -37,21 +36,65 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
         duration: 30,
       });
     },
+    onMutate: async () => {
+      const today = toLocalDateString(new Date());
+      await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
+
+      const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
+      const previousStats = queryClient.getQueryData<any>(["/api/stats", today]);
+
+      const optimisticSession = {
+        id: -1,
+        bookId: book.id,
+        date: today,
+        pagesRead: 1,
+        duration: 30,
+      };
+
+      // Optimistically update all session queries
+      queryClient.setQueriesData({ queryKey: ["/api/reading-sessions"] }, (old: any[] | undefined) => {
+        if (!old) return [optimisticSession];
+        // For range-based queries, we should check if today is within range,
+        // but for simplicity we'll just add it if it's not already there
+        if (old.some(s => s.id === -1 && s.bookId === book.id && s.date === today)) return old;
+        return [...old, optimisticSession];
+      });
+
+      // Optimistically update stats
+      queryClient.setQueriesData({ queryKey: ["/api/stats"] }, (old: any | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          streak: (old.streak === 0) ? 1 : old.streak
+        };
+      });
+
+      return { previousSessions, previousStats };
+    },
     onSuccess: () => {
       toast({
         title: "Reading recorded!",
         description: `Marked progress for "${book.title}"`,
       });
-      
-      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(["/api/reading-sessions"], context.previousSessions);
+      }
+      if (context?.previousStats) {
+        const today = toLocalDateString(new Date());
+        queryClient.setQueryData(["/api/stats", today], context.previousStats);
+      }
       toast({
         title: "Error",
         description: "Failed to record reading session",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
   });
 
@@ -59,21 +102,36 @@ export default function BookCard({ book, isEditMode = false, onEditModeToggle, o
     mutationFn: (id: number) => {
       return apiRequest("DELETE", `/api/reading-sessions/${id}`);
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/reading-sessions"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/stats"] });
+      const previousSessions = queryClient.getQueryData<any[]>(["/api/reading-sessions"]);
+
+      queryClient.setQueriesData({ queryKey: ["/api/reading-sessions"] }, (old: any[] | undefined) =>
+        old ? old.filter(s => s.id !== id) : []
+      );
+
+      return { previousSessions };
+    },
     onSuccess: () => {
       toast({
         title: "Reading session removed",
         description: "Your reading progress for today has been removed.",
       });
-
-      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
-    onError: () => {
+    onError: (err, variables, context) => {
+      if (context?.previousSessions) {
+        queryClient.setQueryData(["/api/reading-sessions"], context.previousSessions);
+      }
       toast({
         title: "Error",
         description: "Failed to remove reading session",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reading-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
     },
   });
 

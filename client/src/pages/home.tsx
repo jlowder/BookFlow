@@ -117,14 +117,15 @@ export default function Home() {
     },
   });
 
-  const { data: stats = { streak: 0, totalBooks: 0 } } = useQuery<{
+  const { data: stats = { streak: 0, totalBooks: 0, earliestRecord: null } } = useQuery<{
     streak: number;
     totalBooks: number;
+    earliestRecord: string | null;
   }>({
     queryKey: ["/api/stats", toLocalDateString(currentDate)],
     queryFn: () => {
       const today = toLocalDateString(currentDate);
-      return fetch(`/api/stats?today=${today}`).then((res) => res.json());
+      return apiRequest("GET", `/api/stats?today=${today}`);
     },
   });
 
