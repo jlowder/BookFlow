@@ -8,6 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - GOOGLE_BOOKS_API_KEY=${GOOGLE_BOOKS_API_KEY}
     restart: unless-stopped
     healthcheck:
       test:
