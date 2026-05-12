@@ -294,7 +294,7 @@ export default function ReadingTimeline({
             } else {
               const isInRange = currentDate >= yearGridStartDate && currentDate <= yearGridEndDate;
               // Pre-compute dateTitle to avoid Date object creation in render loop
-              const dateTitle = isInRange ? monthDayFormatter.format(new Date(dateStr + 'T00:00:00')) : '';
+              const dateTitle = isInRange ? monthDayFormatter.format(currentDate) : '';
 
               week[actualDayOfWeek] = { date: isInRange ? dateStr : '', isEmpty: !isInRange, sessions: [], colors: [], hasReading: false, dateTitle };
             }
