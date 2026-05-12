@@ -20,6 +20,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const [searchResults, setSearchResults] = useState<GoogleBook[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
+  const [customPageCount, setCustomPageCount] = useState<string>("");
   const [isManual, setIsManual] = useState(false);
   const [manualBook, setManualBook] = useState({
     title: "",
@@ -110,11 +111,25 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
       };
     } else {
       if (!selectedBook) return;
+
+      // Use volumeInfo pageCount if valid (> 0), otherwise use custom input
+      const apiPageCount = selectedBook.volumeInfo.pageCount;
+      const totalPages = (apiPageCount && apiPageCount > 0) ? apiPageCount : parseInt(customPageCount);
+
+      if (!totalPages || totalPages <= 0) {
+        toast({
+          title: "Missing Information",
+          description: "Total pages is required to track reading progress.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       bookData = {
         title: selectedBook.volumeInfo.title,
         author: selectedBook.volumeInfo.authors?.[0] || "Unknown Author",
         coverUrl: selectedBook.volumeInfo.imageLinks?.thumbnail || selectedBook.volumeInfo.imageLinks?.smallThumbnail,
-        totalPages: selectedBook.volumeInfo.pageCount || 0,
+        totalPages: totalPages,
         currentPage: 0,
         status: "reading" as const,
         startDate: toLocalDateString(new Date()),
@@ -129,6 +144,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
     setSearchQuery("");
     setSearchResults([]);
     setSelectedBook(null);
+    setCustomPageCount("");
     setIsSearching(false);
     setIsManual(false);
     setManualBook({
@@ -195,7 +211,10 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                             ? 'border-blue-500 bg-blue-50' 
                             : 'border-gray-200 hover:bg-gray-50'
                         }`}
-                        onClick={() => setSelectedBook(book)}
+                        onClick={() => {
+                          setSelectedBook(book);
+                          setCustomPageCount(book.volumeInfo.pageCount?.toString() || "");
+                        }}
                       >
                         <div className="flex space-x-3">
                           <img 
@@ -217,6 +236,25 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {selectedBook && (!selectedBook.volumeInfo.pageCount || selectedBook.volumeInfo.pageCount <= 0) && (
+                  <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg space-y-2 animate-in fade-in slide-in-from-top-1">
+                    <Label htmlFor="custom-pages" className="text-sm font-medium text-blue-900">
+                      We couldn't find the page count for this book. Please enter it manually:
+                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="custom-pages"
+                        type="number"
+                        placeholder="Total pages"
+                        value={customPageCount}
+                        onChange={(e) => setCustomPageCount(e.target.value)}
+                        className="max-w-[150px] bg-white"
+                      />
+                      <span className="text-sm text-blue-700 font-medium">pages</span>
+                    </div>
                   </div>
                 )}
 

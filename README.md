@@ -46,10 +46,18 @@ BookFlow uses the Google Books API for book searching. To avoid quota limits, it
 No special OAuth scopes are required for book search as it only accesses public data.
 
 ### Setting the API Key
-Set the `GOOGLE_BOOKS_API_KEY` environment variable to your key. If you are using Docker, you can pass it using the `-e` flag:
+BookFlow automatically detects the `GOOGLE_BOOKS_API_KEY` environment variable. You should export this key in your host environment:
+
 ```sh
-docker run -d ... -e GOOGLE_BOOKS_API_KEY=your_api_key_here ...
+export GOOGLE_BOOKS_API_KEY=your_api_key_here
 ```
+
+If you are using Docker, you can pass it using the `-e` flag:
+```sh
+docker run -d ... -e GOOGLE_BOOKS_API_KEY ...
+```
+Or, if you are using Docker Compose, it will be automatically picked up from your environment.
+
 If the Google Books API quota is exceeded or the service is unavailable, BookFlow will automatically fall back to the OpenLibrary API.
 
 ## Manual Installation
