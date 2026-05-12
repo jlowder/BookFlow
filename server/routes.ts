@@ -22,33 +22,69 @@ const colors = [
 ];
 
 async function searchOpenLibrary(query: string) {
-  try {
-    const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`);
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (!data.docs) return null;
+  const maxRetries = 2;
+  let attempt = 0;
 
-    return {
-      items: data.docs.map((doc: any) => ({
-        id: doc.key.replace("/works/", ""),
-        volumeInfo: {
-          title: doc.title,
-          authors: doc.author_name,
-          imageLinks: doc.cover_i ? {
-            thumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`,
-            smallThumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-S.jpg`
-          } : undefined,
-          pageCount: doc.number_of_pages_median || doc.number_of_pages || undefined,
-          publishedDate: doc.first_publish_year?.toString(),
-          categories: doc.subject?.slice(0, 5),
-          description: doc.first_sentence?.[0]
+  while (attempt < maxRetries) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`,
+        {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'BookFlow/1.0 (https://github.com/jlowder/BookFlow)'
+          }
         }
-      }))
-    };
-  } catch (error) {
-    console.error("OpenLibrary search error:", error);
-    return null;
+      );
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        if (response.status === 429 || response.status >= 500) {
+          const delay = Math.pow(2, attempt) * 1000;
+          attempt++;
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      if (!data.docs) return null;
+
+      return {
+        items: data.docs.map((doc: any) => ({
+          id: doc.key.replace("/works/", ""),
+          volumeInfo: {
+            title: doc.title,
+            authors: doc.author_name,
+            imageLinks: doc.cover_i ? {
+              thumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`,
+              smallThumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-S.jpg`
+            } : undefined,
+            pageCount: doc.number_of_pages_median || doc.number_of_pages || undefined,
+            publishedDate: doc.first_publish_year?.toString(),
+            categories: doc.subject?.slice(0, 5),
+            description: doc.first_sentence?.[0]
+          }
+        }))
+      };
+    } catch (error) {
+      console.error(`OpenLibrary search attempt ${attempt + 1} error:`, error);
+      attempt++;
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+      return null;
+    }
   }
+  return null;
 }
 
 async function getUniqueColor() {
