@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { toLocalDateString } from "@/lib/date-utils";
@@ -18,6 +18,10 @@ interface ReadingTimelineProps {
   endDate: Date;
   canShowGridView: boolean;
 }
+
+// Pre-instantiate formatters for performance
+const monthDayFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const shortMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
 
 export default function ReadingTimeline({
   editModeBookId,
@@ -131,7 +135,7 @@ export default function ReadingTimeline({
 
 
   // Generate timeline data
-  const generateTimelineData = () => {
+  const timelineData = useMemo(() => {
     const timeline = [];
     // For grid view, start from fetchStartDate to include padding days
     // For ribbon view, use the regular startDate
@@ -152,11 +156,9 @@ export default function ReadingTimeline({
     }
 
     return timeline;
-  };
+  }, [shouldUseGridView, fetchStartDate.getTime(), startDate.getTime(), endDate.getTime(), sessions]);
 
-  const timelineData = generateTimelineData();
-
-  const getDateLabels = () => {
+  const dateLabels = useMemo(() => {
     const totalDays = timelineData.length;
     if (totalDays === 0) return [];
     
@@ -167,7 +169,7 @@ export default function ReadingTimeline({
       // If only one label, show the last day
       const dayData = timelineData[totalDays - 1];
       const date = new Date(dayData.date + 'T00:00:00');
-      labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      labels.push(monthDayFormatter.format(date));
     } else {
       // Calculate interval for intermediate labels
       const interval = Math.floor((totalDays - 1) / (labelCount - 1));
@@ -177,7 +179,7 @@ export default function ReadingTimeline({
         const dayData = timelineData[index];
         if (dayData) {
           const date = new Date(dayData.date + 'T00:00:00');
-          labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+          labels.push(monthDayFormatter.format(date));
         }
       }
       
@@ -185,13 +187,13 @@ export default function ReadingTimeline({
       const lastDayData = timelineData[totalDays - 1];
       if (lastDayData) {
         const date = new Date(lastDayData.date + 'T00:00:00');
-        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        labels.push(monthDayFormatter.format(date));
       }
     }
     
 
     return labels;
-  };
+  }, [timelineData]);
 
   const generateRibbonSegments = (book: Book) => {
     const segments = [];
@@ -223,19 +225,16 @@ export default function ReadingTimeline({
     return segments;
   };
 
-  const generateGridData = () => {
+  const yearlyGridData = useMemo(() => {
     if (timelineData.length === 0) return [];
 
     // Create a map for quick lookup of timeline data
     const dayMap = new Map(timelineData.map(day => [day.date, day]));
 
     // Pre-compute book lookup Map for O(1) lookups instead of O(n) find() calls
-    // This improves complexity from O(n×m×k) to O(m×k) where:
-    // n = total books, m = total days, k = avg books per day
     const bookMap = new Map(books.map(b => [b.id, b]));
 
     // Use the startDate and endDate props passed from parent (home.tsx)
-    // For "All Time" selection, startDate will be 1970-01-01 and endDate will be current date
     const gridDataStartDate = new Date(startDate.getTime());
     const gridDataEndDate = new Date(endDate.getTime());
 
@@ -248,8 +247,6 @@ export default function ReadingTimeline({
     }
 
     const yearlyGrids = years.map((year) => {
-        // Create a complete year's worth of data, not just reading session dates
-        // This ensures all 12 months are displayed for each year
         const yearStartDate = new Date(year, 0, 1);
         const yearEndDate = new Date(year, 11, 31);
 
@@ -275,7 +272,7 @@ export default function ReadingTimeline({
             if (currentDate >= yearGridStartDate && currentDate <= yearGridEndDate && currentDate.getMonth() !== currentMonth) {
               currentMonth = currentDate.getMonth();
               monthLabels.push({
-                month: currentDate.toLocaleDateString('en-US', { month: 'short' }),
+                month: shortMonthFormatter.format(currentDate),
                 weekIndex: weekIndex
               });
             }
@@ -286,21 +283,18 @@ export default function ReadingTimeline({
 
             if (dayData) {
               const bookIds = dayData.sessions.map((s: ReadingSession) => s.bookId);
-              const uniqueBookIds = [...new Set(bookIds)];
-              // Use O(1) Map lookup instead of O(n) find()
+              const uniqueBookIds = Array.from(new Set(bookIds));
               const dayBooks = uniqueBookIds.map(id => bookMap.get(id)).filter(Boolean) as Book[];
-              // Safely extract colors with fallback for missing/invalid data
               const colors = dayBooks.map(b => b.color);
 
               // Pre-compute dateTitle to avoid Date object creation in render loop
-              // This calculation happens once during data generation, not on every render
-              const dateTitle = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              const dateTitle = monthDayFormatter.format(currentDate);
 
               week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading, dateTitle };
             } else {
               const isInRange = currentDate >= yearGridStartDate && currentDate <= yearGridEndDate;
               // Pre-compute dateTitle to avoid Date object creation in render loop
-              const dateTitle = isInRange ? new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+              const dateTitle = isInRange ? monthDayFormatter.format(currentDate) : '';
 
               week[actualDayOfWeek] = { date: isInRange ? dateStr : '', isEmpty: !isInRange, sessions: [], colors: [], hasReading: false, dateTitle };
             }
@@ -329,7 +323,7 @@ export default function ReadingTimeline({
           lastLeft = newLeft;
         });
 
-        return { year: parseInt(year), weeks, monthLabels: processedMonthLabels };
+        return { year: year, weeks, monthLabels: processedMonthLabels };
       })
       .filter((grid) => {
         // Only show years that have at least one reading session
@@ -337,9 +331,7 @@ export default function ReadingTimeline({
       });
 
     return yearlyGrids;
-  };
-
-  const yearlyGridData = generateGridData();
+  }, [timelineData, books, startDate.getTime(), endDate.getTime()]);
 
   return (
     <section className="mb-12" data-testid="reading-timeline-section">
@@ -495,7 +487,7 @@ export default function ReadingTimeline({
               <div data-testid="ribbon-view">
                 {/* Date Labels */}
                 <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-4">
-                  {getDateLabels().map((label, i) => (
+                  {dateLabels.map((label, i) => (
                     <span key={i}>{label}</span>
                   ))}
                 </div>
