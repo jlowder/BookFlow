@@ -443,15 +443,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Parse CSV
-      const records = parse(csvData, {
+      const parser = parse(csvData, {
         columns: true,
         skip_empty_lines: true
       });
 
+      const records = [];
+      for await (const record of parser) {
+        records.push(record);
+      }
+
       const processedBooks = new Map();
+      const processedSessions = new Set();
+
+      // Cache existing books and sessions to avoid redundant DB queries
+      const existingBooksFromDb = await storage.getBooks();
+      const existingSessionsFromDb = await storage.getAllReadingSessions();
 
       // Process records
-      for await (const record of records) {
+      for (const record of records) {
         const type = record.Type;
         const bookId = parseInt(record.BookId);
 
@@ -473,8 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             // Check if book already exists
-            const existingBooks = await storage.getBooks();
-            const existingBook = existingBooks.find(b =>
+            const existingBook = existingBooksFromDb.find(b =>
               b.title === bookData.title && b.author === bookData.author
             );
 
@@ -508,14 +517,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 notes: record.SessionNotes || null
               };
 
-              // Check if session already exists
-              const existingSessions = await storage.getAllReadingSessions();
-              const existingSession = existingSessions.find(s =>
-                s.bookId === realBookId && s.date === sessionData.date
+              // Check if session already exists in DB to avoid exact duplicates
+              const isDuplicateInDb = existingSessionsFromDb.some(s =>
+                s.bookId === realBookId &&
+                s.date === sessionData.date &&
+                s.pagesRead === sessionData.pagesRead &&
+                s.duration === sessionData.duration &&
+                s.notes === sessionData.notes
               );
 
-              if (!existingSession) {
+              // Also check if we've already processed this exact session in this import
+              const sessionKey = `${realBookId}-${sessionData.date}-${sessionData.pagesRead}-${sessionData.duration}-${sessionData.notes}`;
+              const isDuplicateInImport = processedSessions.has(sessionKey);
+
+              if (!isDuplicateInDb && !isDuplicateInImport) {
                 await storage.createReadingSession(sessionData);
+                processedSessions.add(sessionKey);
                 results.sessions.created++;
               }
             }
