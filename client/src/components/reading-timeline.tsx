@@ -156,7 +156,7 @@ export default function ReadingTimeline({
     }
 
     return timeline;
-  }, [shouldUseGridView, fetchStartDate, startDate, endDate, sessions]);
+  }, [shouldUseGridView, fetchStartDate.getTime(), startDate.getTime(), endDate.getTime(), sessions]);
 
   const dateLabels = useMemo(() => {
     const totalDays = timelineData.length;
