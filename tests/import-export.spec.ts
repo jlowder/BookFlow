@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = process.env.API_URL || 'http://localhost:5000/api';
 
 test.describe('Data Import/Export', () => {
   test.beforeEach(async ({ request }) => {
