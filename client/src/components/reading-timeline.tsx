@@ -331,7 +331,7 @@ export default function ReadingTimeline({
       });
 
     return yearlyGrids;
-  }, [timelineData, books, startDate, endDate]);
+  }, [timelineData, books, startDate.getTime(), endDate.getTime()]);
 
   return (
     <section className="mb-12" data-testid="reading-timeline-section">
