@@ -443,20 +443,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Parse CSV
-      const records = parse(csvData, {
+      const parser = parse(csvData, {
         columns: true,
         skip_empty_lines: true
       });
 
-      const processedBooks = new Map();
+      const records = [];
+      for await (const record of parser) {
+        records.push(record);
+      }
+
+      // Map of CSV bookId to Database bookId
+      const csvToDbBookIdMap = new Map();
+      const processedSessions = new Set();
+
+      // Cache existing books and sessions to avoid redundant DB queries
+      const existingBooksFromDb = await storage.getBooks();
+      const existingSessionsFromDb = await storage.getAllReadingSessions();
+
+      // Maps for O(1) lookup of existing data
+      const booksByTitleAuthor = new Map(
+        existingBooksFromDb.map(b => [`${b.title.trim()}|${b.author.trim()}`, b.id])
+      );
+      const existingSessionsSet = new Set(
+        existingSessionsFromDb.map(s =>
+          `${s.bookId}-${s.date}-${s.pagesRead}-${s.duration}-${s.notes}`
+        )
+      );
 
       // Process records
-      for await (const record of records) {
+      for (const record of records) {
         const type = record.Type;
-        const bookId = parseInt(record.BookId);
+        const csvBookId = parseInt(record.BookId);
+        const bookTitleAuthorKey = `${(record.Title || '').trim()}|${(record.Author || '').trim()}`;
 
-        // Process book data if not already processed
-        if (!processedBooks.has(bookId)) {
+        // Process book data if not already processed for this CSV bookId OR this Title|Author combo
+        if (!csvToDbBookIdMap.has(csvBookId) && !booksByTitleAuthor.has(bookTitleAuthorKey)) {
           try {
             const bookData = {
               title: record.Title,
@@ -472,25 +494,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
               notes: record.Notes || null
             };
 
-            // Check if book already exists
-            const existingBooks = await storage.getBooks();
-            const existingBook = existingBooks.find(b =>
-              b.title === bookData.title && b.author === bookData.author
-            );
-
-            if (existingBook) {
-              // Update existing book
-              await storage.updateBook(existingBook.id, bookData);
-              processedBooks.set(bookId, existingBook.id);
-              results.books.updated++;
-            } else {
-              // Create new book
-              const newBook = await storage.createBook(bookData);
-              processedBooks.set(bookId, newBook.id);
-              results.books.created++;
-            }
+            // Create new book
+            const newBook = await storage.createBook(bookData);
+            csvToDbBookIdMap.set(csvBookId, newBook.id);
+            booksByTitleAuthor.set(bookTitleAuthorKey, newBook.id);
+            results.books.created++;
           } catch (error) {
-            console.error('Error processing book:', error);
+            console.error('Error creating book during import:', error);
+            results.books.errors++;
+          }
+        } else if (!csvToDbBookIdMap.has(csvBookId) && booksByTitleAuthor.has(bookTitleAuthorKey)) {
+          // Book already exists in DB or was created in this import, link it
+          const realBookId = booksByTitleAuthor.get(bookTitleAuthorKey);
+          csvToDbBookIdMap.set(csvBookId, realBookId);
+
+          // Optionally update the book if it existed in DB before
+          try {
+            const bookData = {
+              title: record.Title,
+              author: record.Author,
+              color: record.Color,
+              coverUrl: record.CoverUrl || null,
+              totalPages: record.TotalPages ? parseInt(record.TotalPages) : null,
+              currentPage: record.CurrentPage ? parseInt(record.CurrentPage) : null,
+              status: record.Status as "reading" | "completed" | "paused",
+              startDate: record.StartDate || null,
+              completedDate: record.CompletedDate || null,
+              publicationDate: record.PublicationDate || null,
+              notes: record.Notes || null
+            };
+            await storage.updateBook(realBookId, bookData);
+            results.books.updated++;
+          } catch (error) {
+            console.error('Error updating book during import:', error);
             results.books.errors++;
           }
         }
@@ -498,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process session data if present
         if (type === 'book_with_session' && record.SessionDate) {
           try {
-            const realBookId = processedBooks.get(bookId);
+            const realBookId = csvToDbBookIdMap.get(csvBookId);
             if (realBookId) {
               const sessionData = {
                 bookId: realBookId,
@@ -508,14 +544,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 notes: record.SessionNotes || null
               };
 
-              // Check if session already exists
-              const existingSessions = await storage.getAllReadingSessions();
-              const existingSession = existingSessions.find(s =>
-                s.bookId === realBookId && s.date === sessionData.date
-              );
+              const sessionKey = `${realBookId}-${sessionData.date}-${sessionData.pagesRead}-${sessionData.duration}-${sessionData.notes}`;
 
-              if (!existingSession) {
+              if (!existingSessionsSet.has(sessionKey) && !processedSessions.has(sessionKey)) {
                 await storage.createReadingSession(sessionData);
+                processedSessions.add(sessionKey);
                 results.sessions.created++;
               }
             }
