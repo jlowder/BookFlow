@@ -21,6 +21,72 @@ const colors = [
   "#D946EF", // fuchsia
 ];
 
+async function searchOpenLibrary(query: string) {
+  const maxRetries = 2;
+  let attempt = 0;
+
+  while (attempt < maxRetries) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`,
+        {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'BookFlow/1.0 (https://github.com/jlowder/BookFlow)'
+          }
+        }
+      );
+
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        if (response.status === 429 || response.status >= 500) {
+          const delay = Math.pow(2, attempt) * 1000;
+          attempt++;
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      if (!data.docs) return null;
+
+      return {
+        items: data.docs.map((doc: any) => ({
+          id: doc.key.replace("/works/", ""),
+          volumeInfo: {
+            title: doc.title,
+            authors: doc.author_name,
+            imageLinks: doc.cover_i ? {
+              thumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`,
+              smallThumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-S.jpg`
+            } : undefined,
+            pageCount: doc.number_of_pages_median || doc.number_of_pages || undefined,
+            publishedDate: doc.first_publish_year?.toString(),
+            categories: doc.subject?.slice(0, 5),
+            description: doc.first_sentence?.[0]
+          }
+        }))
+      };
+    } catch (error) {
+      console.error(`OpenLibrary search attempt ${attempt + 1} error:`, error);
+      attempt++;
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
 async function getUniqueColor() {
   // Get all existing books to check their colors
   const existingBooks = await storage.getBooks();
@@ -226,8 +292,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 10000);
 
+          const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+          const url = new URL("https://www.googleapis.com/books/v1/volumes");
+          url.searchParams.set("q", q as string);
+          url.searchParams.set("maxResults", "10");
+          url.searchParams.set("country", "US");
+          url.searchParams.set("projection", "lite");
+          if (apiKey) {
+            url.searchParams.set("key", apiKey);
+          }
+
           const response = await fetch(
-            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q as string)}&maxResults=10&country=US&projection=lite`,
+            url.toString(),
             {
               signal: controller.signal,
               headers: {
@@ -273,10 +349,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.error(`Google Books API final failure for query "${q}":`, lastError?.status, JSON.stringify(lastError?.data));
+      console.warn(`Google Books API search failed for "${q}" (status ${lastError?.status}), attempting OpenLibrary fallback...`);
+      const openLibraryData = await searchOpenLibrary(q as string);
+
+      if (openLibraryData && openLibraryData.items && openLibraryData.items.length > 0) {
+        console.log(`OpenLibrary fallback successful for query "${q}"`);
+        return res.json(openLibraryData);
+      }
+
+      console.error(`Google Books API final failure and OpenLibrary fallback failed for query "${q}":`, lastError?.status, JSON.stringify(lastError?.data));
       res.status(lastError?.status || 500).json({
-        error: "Google Books API error",
-        details: lastError?.data
+        error: "Search failed",
+        details: {
+          googleBooks: lastError?.data,
+          openLibrary: "No results found or service unavailable"
+        }
       });
     } catch (error) {
       console.error('Search error:', error);

@@ -30,6 +30,36 @@ docker run -d --restart always -d -p 3000:3000 -v bookflow_data:/app/data ghcr.i
 
 Then, browse to localhost:3000, or whatever port you chose. The app will be installed permanently; that is, it will persist through reboots.
 
+## Configuration
+
+BookFlow uses the Google Books API for book searching. To avoid quota limits, it is recommended to provide a Google Books API Key.
+
+### Obtaining a Google Books API Key
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project or select an existing one.
+3. Navigate to **APIs & Services > Library**.
+4. Search for "Books API" and enable it.
+5. Go to **APIs & Services > Credentials**.
+6. Click **Create Credentials** and select **API Key**.
+7. (Optional but recommended) Restrict the key to only the "Books API".
+
+No special OAuth scopes are required for book search as it only accesses public data.
+
+### Setting the API Key
+BookFlow automatically detects the `GOOGLE_BOOKS_API_KEY` environment variable. You should export this key in your host environment:
+
+```sh
+export GOOGLE_BOOKS_API_KEY=your_api_key_here
+```
+
+If you are using Docker, you can pass it using the `-e` flag:
+```sh
+docker run -d ... -e GOOGLE_BOOKS_API_KEY ...
+```
+Or, if you are using Docker Compose, it will be automatically picked up from your environment.
+
+If the Google Books API quota is exceeded or the service is unavailable, BookFlow will automatically fall back to the OpenLibrary API.
+
 ## Manual Installation
 
 1. Clone the repo:
