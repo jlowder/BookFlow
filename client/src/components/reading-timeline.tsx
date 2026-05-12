@@ -288,7 +288,7 @@ export default function ReadingTimeline({
               const colors = dayBooks.map(b => b.color);
 
               // Pre-compute dateTitle to avoid Date object creation in render loop
-              const dateTitle = monthDayFormatter.format(new Date(dateStr + 'T00:00:00'));
+              const dateTitle = monthDayFormatter.format(currentDate);
 
               week[actualDayOfWeek] = { date: dateStr, isEmpty: false, sessions: dayData.sessions, colors, hasReading: dayData.hasReading, dateTitle };
             } else {
