@@ -114,4 +114,41 @@ test.describe('Data Import/Export', () => {
     const importResult = await importResponse.json();
     expect(importResult.results.books.created).toBe(200);
   });
+
+  test('should handle duplicate books with different CSV IDs', async ({ request }) => {
+    // Generate CSV data with same book title/author but different BookIds
+    const csvData = [
+        'Type,BookId,Title,Author,Color,CoverUrl,TotalPages,CurrentPage,Status,StartDate,CompletedDate,PublicationDate,Notes,SessionId,SessionDate,PagesRead,Duration,SessionNotes',
+        'book_only,1,Duplicate Book,Author,#ffffff,,100,0,reading,2025-01-01,,,Notes 1,,,,,',
+        'book_only,2,Duplicate Book,Author,#ffffff,,100,0,reading,2025-01-01,,,Notes 2,,,,,',
+        'book_with_session,1,Duplicate Book,Author,#ffffff,,100,0,reading,2025-01-01,,,Notes 1,,2025-01-01,10,30,Session 1',
+        'book_with_session,2,Duplicate Book,Author,#ffffff,,100,0,reading,2025-01-01,,,Notes 2,,2025-01-02,15,30,Session 2'
+    ].join('\n');
+
+    const importResponse = await request.post(`${API_URL}/import/csv`, {
+      data: {
+        csvData: csvData
+      }
+    });
+
+    expect(importResponse.ok()).toBeTruthy();
+    const importResult = await importResponse.json();
+
+    // Should create 1 book and update it once (or create 1 and skip 1, depends on implementation details, but total in DB should be 1)
+    // My implementation updates existing ones.
+    expect(importResult.results.books.created).toBe(1);
+    expect(importResult.results.books.updated).toBe(1);
+    expect(importResult.results.sessions.created).toBe(2);
+
+    // Verify DB has only 1 book
+    const booksResponse = await request.get(`${API_URL}/books`);
+    const books = await booksResponse.json();
+    expect(books.length).toBe(1);
+    expect(books[0].title).toBe('Duplicate Book');
+
+    // Verify both sessions are there
+    const sessionsResponse = await request.get(`${API_URL}/books/${books[0].id}/sessions`);
+    const sessions = await sessionsResponse.json();
+    expect(sessions.length).toBe(2);
+  });
 });
